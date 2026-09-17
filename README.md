@@ -2,11 +2,27 @@
 
 Folio-inspired, mobile-first AI product studio for e-commerce creators.
 
+## Current build — v0.2
+
+The first functional foundation is now in place:
+
+- responsive product studio UI
+- mobile camera/gallery input
+- JPG / PNG / WEBP validation
+- 12 MB upload guard
+- product preview
+- six commercial image presets
+- server-side generation intake API
+- provider registry
+- configurable ComfyUI adapter
+- health endpoint with provider status
+- provider-independent prompt presets
+
 ## Product vision
 
 One product photo in → a complete commercial content pack out:
 
-- clean marketplace hero image
+- marketplace hero image
 - white-background product image
 - studio scene
 - lifestyle scene
@@ -15,41 +31,63 @@ One product photo in → a complete commercial content pack out:
 - product title, description and SEO copy
 - batch generation
 - ZIP export
-- product video (later phase)
+- product video
 
 ## Platforms
 
 - Responsive web/PWA: phone, tablet and desktop
 - Windows desktop app via Tauri 2
 - Android package via Tauri 2
-- AI generation is provider-based so the UI is not tied to one vendor or model
-
-## Planned AI stack
-
-- Qwen-Image-Edit-2509 for product-aware image editing/generation
-- BiRefNet for foreground/background extraction
-- ComfyUI workflows for advanced/local pipelines
-- Wan2.2 I2V for the later video module
+- Same product workflow across devices
 
 ## Architecture
 
 ```text
-Web / PWA / Tauri
-        |
-        v
-   Next.js UI/API
-        |
-        +---- Product pipeline
-        |       +-- background removal
-        |       +-- image generation/editing
-        |       +-- QA
-        |       +-- batch jobs
-        |       +-- ZIP export
-        |
-        +---- Provider layer
-                +-- Qwen/ComfyUI local or remote
-                +-- API providers
+Phone / Browser / Tauri
+          |
+          v
+      Next.js UI
+          |
+          v
+    /api/generate
+          |
+          +------ Provider registry
+          |             |
+          |             +-- ComfyUI
+          |                    |
+          |                    +-- Qwen Image Edit workflow
+          |                    +-- custom workflows
+          |
+          +------ Background provider
+          |             +-- BiRefNet
+          |
+          +------ Future modules
+                        +-- QA
+                        +-- batch queue
+                        +-- catalog/SEO
+                        +-- ZIP export
+                        +-- image-to-video
 ```
+
+## ComfyUI connection
+
+Copy `.env.example` to `.env.local` and configure:
+
+```env
+IMAGE_PROVIDER=comfyui
+COMFYUI_BASE_URL=http://127.0.0.1:8188
+COMFYUI_TIMEOUT_MS=180000
+COMFYUI_WORKFLOW_JSON={...}
+```
+
+The workflow JSON is intentionally provider-configurable. The adapter replaces these placeholders before submitting the workflow:
+
+- `__IMAGE__`
+- `__PROMPT__`
+- `__WIDTH__`
+- `__HEIGHT__`
+
+This keeps the application independent from a single ComfyUI workflow/node layout.
 
 ## Development
 
@@ -58,8 +96,15 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Then open `http://localhost:3000`.
 
-## Important licensing rule
+Validation:
 
-The application code is being developed independently. Third-party code, model weights and workflows must be reviewed separately before commercial distribution. A repository's software license does **not** automatically grant commercial rights to every model or asset it uses.
+```bash
+npm run typecheck
+npm run build
+```
+
+## Licensing discipline
+
+The application code is being developed independently. Third-party repositories, code, workflows, model weights, APIs and generated assets must be reviewed separately before commercial distribution. A repository's software license does **not** automatically grant commercial rights to every model or asset it uses.

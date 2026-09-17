@@ -1,0 +1,36 @@
+name: Windows Desktop
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install Node dependencies
+        run: npm install
+      - name: Build Next static shell
+        run: npm run build
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --locked
+      - name: Build Windows installer
+        run: cargo tauri build
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: agt-product-ai-windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe

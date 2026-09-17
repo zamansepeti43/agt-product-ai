@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { GENERATION_PRESETS } from "@/lib/ai/presets";
-import type { GenerationJob, ImageJobMode } from "@/lib/ai/types";
+import type { GeneratedAsset, GenerationJob, ImageJobMode } from "@/lib/ai/types";
 
 const MAX_FILE_SIZE = 12 * 1024 * 1024;
 
@@ -11,6 +11,7 @@ export default function Home() {
   const [preview, setPreview] = useState("");
   const [mode, setMode] = useState<ImageJobMode>("hero");
   const [job, setJob] = useState<GenerationJob | null>(null);
+  const [assets, setAssets] = useState<GeneratedAsset[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -32,6 +33,7 @@ export default function Home() {
   function selectFile(next: File | undefined) {
     setError("");
     setJob(null);
+    setAssets([]);
     if (!next) return;
     if (!next.type.startsWith("image/")) {
       setError("Lütfen bir görsel dosyası seç.");
@@ -48,6 +50,7 @@ export default function Home() {
     if (!file || busy) return;
     setBusy(true);
     setError("");
+    setAssets([]);
     try {
       const body = new FormData();
       body.append("image", file);
@@ -56,6 +59,7 @@ export default function Home() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Üretim başlatılamadı.");
       setJob(data.job as GenerationJob);
+      setAssets((data.assets as GeneratedAsset[] | undefined) ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Beklenmeyen bir hata oluştu.");
     } finally {
@@ -110,9 +114,23 @@ export default function Home() {
         {error && <div className="notice error">{error}</div>}
         {job && <div className="notice success"><strong>✓ {job.message}</strong><small>Job: {job.id}</small></div>}
 
+        {assets.length > 0 && (
+          <div className="results">
+            <div className="results-head"><div><span className="eyebrow">SONUÇ</span><h2>{assets.length} görsel hazır</h2></div><span className="device-note">Sağ tık / basılı tut → kaydet</span></div>
+            <div className="asset-grid">
+              {assets.map((asset) => (
+                <a className="asset-card" key={asset.id} href={asset.url} target="_blank" rel="noreferrer">
+                  <img src={asset.url} alt="Üretilen ürün görseli" loading="lazy" />
+                  <span>{asset.mode} • {asset.width}×{asset.height}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="action-row">
           <div><strong>{file ? "Fotoğraf hazır" : "Önce ürün fotoğrafını seç"}</strong><span className="muted"> • {selected.label}</span></div>
-          <button className="generate" disabled={!file || busy} onClick={startGeneration}>{busy ? "Kontrol ediliyor…" : "Üretmeye Başla →"}</button>
+          <button className="generate" disabled={!file || busy} onClick={startGeneration}>{busy ? "Üretim çalışıyor…" : "Üretmeye Başla →"}</button>
         </div>
       </section>
 

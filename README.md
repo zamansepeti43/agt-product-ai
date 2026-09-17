@@ -1,29 +1,22 @@
 # AGT Product AI
 
-Folio-inspired, mobile-first AI product studio for e-commerce creators.
+Mobile-first AI product studio for e-commerce creators.
 
-## Current build — v0.4
+## Current build — v0.5
 
-The functional foundation now includes:
-
-- responsive product studio UI
+- responsive web/PWA product studio
 - mobile camera/gallery input
 - JPG / PNG / WEBP validation
 - 12 MB per-image and 48 MB batch upload guards
-- product preview
 - six commercial image presets
-- 1–4 output generation control
-- optional per-generation prompt instruction
+- 1–4 outputs per product
 - single-product and up-to-6-product batch generation
-- provider registry
-- configurable ComfyUI adapter
-- Qwen Image Edit-ready workflow placeholders
-- real generated-asset gallery
+- configurable ComfyUI / Qwen Image Edit workflow integration
 - same-origin ComfyUI asset proxy
-- secure server-side ZIP export for up to 24 assets / 50 MB
-- cache-safe PWA shell
-- health endpoint with provider/workflow status
-- provider-independent prompt presets
+- server-side ZIP export for generated assets
+- deterministic catalog title, description, tags and SEO keyword generation
+- Turkish and English catalog copy API
+- health endpoint exposing module readiness
 
 ## Product vision
 
@@ -38,14 +31,8 @@ One product photo in → a complete commercial content pack out:
 - product title, description and SEO copy
 - batch generation
 - ZIP export
+- Windows desktop app
 - product video
-
-## Platforms
-
-- Responsive web/PWA: phone, tablet and desktop
-- Windows desktop app via Tauri 2
-- Android package via Tauri 2
-- Same product workflow across devices
 
 ## Architecture
 
@@ -55,22 +42,16 @@ Phone / Browser / Tauri
           v
       Next.js UI
           |
-          +------ /api/generate ---- Provider registry ---- ComfyUI
-          |                                      |
-          |                                      +-- Qwen Image Edit workflow
-          |                                      +-- custom licensed workflows
-          |
-          +------ /api/batch -------- same provider pipeline
-          |
-          +------ /api/asset -------- same-origin image delivery
-          |
-          +------ /api/export/zip --- validated provider assets -> ZIP
-          |
-          +------ Future modules
-                        +-- QA
-                        +-- catalog/SEO
-                        +-- image-to-video
+          +-- /api/generate ---- image provider ---- ComfyUI / Qwen workflow
+          +-- /api/batch -------- same provider pipeline
+          +-- /api/asset -------- safe provider image delivery
+          +-- /api/catalog ------ catalog + SEO copy
+          +-- /api/export/zip --- validated assets -> ZIP
 ```
+
+## Catalog / SEO
+
+`POST /api/catalog` accepts product name, category, optional brand, keywords, marketplace and language. It returns structured title, short description, description, tags and SEO keywords. The current generator is deterministic and does not claim facts that were not supplied by the user; it is a reliable fallback until an optional LLM catalog provider is connected.
 
 ## ComfyUI connection
 
@@ -83,20 +64,14 @@ COMFYUI_TIMEOUT_MS=180000
 COMFYUI_WORKFLOW_JSON={...}
 ```
 
-The workflow JSON is provider-configurable. The adapter replaces these placeholders:
+Export the production workflow from ComfyUI in API format. The adapter replaces:
 
 - `__IMAGE__`
 - `__PROMPT__`
 - `__WIDTH__`
 - `__HEIGHT__`
 
-The application does not bundle model weights or third-party workflow files. A licensed Qwen Image Edit workflow can be connected through configuration.
-
-Generated `/view` assets are delivered through `/api/asset`, which only accepts the exact origin configured in `COMFYUI_BASE_URL`, the `/view` path, and image content up to 12 MB.
-
-## ZIP export
-
-The result gallery can package up to 24 provider assets into `AGT-Product-AI-export.zip`, with a 50 MB total payload guard. Only `/view` URLs from the configured ComfyUI origin are accepted.
+The repository does not bundle model weights or third-party workflow files. Review licenses for models, workflows, LoRAs, custom nodes and generated assets separately before commercial distribution.
 
 ## Development
 
@@ -105,8 +80,6 @@ npm install
 npm run dev
 ```
 
-Then open `http://localhost:3000`.
-
 Validation:
 
 ```bash
@@ -114,6 +87,10 @@ npm run typecheck
 npm run build
 ```
 
-## Licensing discipline
+## Roadmap
 
-The application code is being developed independently. Third-party repositories, code, workflows, model weights, APIs and generated assets must be reviewed separately before commercial distribution. A repository's software license does **not** automatically grant commercial rights to every model or asset it uses.
+1. Catalog export / copy-to-clipboard package
+2. Windows Tauri 2 shell
+3. Optional persistent job history
+4. QA checks for generated assets
+5. Product video pipeline

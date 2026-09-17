@@ -10,7 +10,7 @@ export interface ProviderCandidate {
 
 export function looksLikeQuotaOrRateLimitError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || "");
-  return /429|resource_exhausted|quota|rate limit|rate_limit|too many requests|limit:\s*0|insufficient/i.test(message);
+  return /429|resource_exhausted|quota|rate limit|rate_limit|too many requests|limit:\s*0|insufficient|yapılandırılmamış|not configured|not-configured|fetch failed|econnrefused|timed? ?out|timeout/i.test(message);
 }
 
 export async function generateWithFallback(
@@ -22,10 +22,7 @@ export async function generateWithFallback(
 
   for (const candidate of candidates) {
     try {
-      const assets = await candidate.provider.generate({
-        ...input,
-        providerConfig: candidate.config,
-      });
+      const assets = await candidate.provider.generate({ ...input, providerConfig: candidate.config });
       return { assets, providerId: candidate.id, skipped };
     } catch (error) {
       lastError = error;
@@ -39,12 +36,7 @@ export async function generateWithFallback(
     : new Error("Kullanılabilir AI motoru kalmadı.");
 }
 
-export function buildAutoFreeCandidates(
-  providers: Record<string, ImageProvider>,
-  configs: ProviderConfigMap,
-) {
+export function buildAutoFreeCandidates(providers: Record<string, ImageProvider>, configs: ProviderConfigMap) {
   const preferredOrder = ["comfyui", "pollinations", "gemini", "openai"];
-  return preferredOrder
-    .filter((id) => providers[id])
-    .map((id) => ({ id, provider: providers[id], config: configs[id] }));
+  return preferredOrder.filter((id) => providers[id]).map((id) => ({ id, provider: providers[id], config: configs[id] }));
 }

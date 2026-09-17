@@ -16,6 +16,7 @@ export interface ProductImageInput {
   prompt?: string;
   width?: number;
   height?: number;
+  count?: number;
 }
 
 export interface GeneratedAsset {
@@ -36,6 +37,7 @@ export interface GenerationRequest {
   fileName: string;
   mimeType: string;
   sizeBytes: number;
+  count?: number;
 }
 
 export interface GenerationJob {

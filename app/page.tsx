@@ -5,9 +5,10 @@ import { GENERATION_PRESETS } from "@/lib/ai/presets";
 import type { GeneratedAsset, GenerationJob, ImageJobMode } from "@/lib/ai/types";
 
 const MAX_FILE_SIZE = 12 * 1024 * 1024;
+const MAX_FILES = 6;
 
 export default function Home() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [preview, setPreview] = useState("");
   const [mode, setMode] = useState<ImageJobMode>("hero");
   const [count, setCount] = useState(1);
@@ -28,43 +29,56 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!file) {
+    if (!files.length) {
       setPreview("");
       return;
     }
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(files[0]);
     setPreview(url);
     return () => URL.revokeObjectURL(url);
-  }, [file]);
+  }, [files]);
 
-  function selectFile(next: File | undefined) {
+  function selectFiles(nextFiles: File[]) {
     setError("");
     setJob(null);
     setAssets([]);
-    if (!next) return;
-    if (!next.type.startsWith("image/")) {
-      setError("Lütfen bir görsel dosyası seç.");
+    if (!nextFiles.length) return;
+    if (nextFiles.length > MAX_FILES) {
+      setError(`En fazla ${MAX_FILES} ürün görseli seçebilirsin.`);
       return;
     }
-    if (next.size > MAX_FILE_SIZE) {
-      setError("Görsel 12 MB'dan küçük olmalı.");
+    if (nextFiles.some((item) => !item.type.startsWith("image/"))) {
+      setError("Lütfen yalnızca görsel dosyaları seç.");
       return;
     }
-    setFile(next);
+    if (nextFiles.some((item) => item.size > MAX_FILE_SIZE)) {
+      setError("Her görsel 12 MB'dan küçük olmalı.");
+      return;
+    }
+    const total = nextFiles.reduce((sum, item) => sum + item.size, 0);
+    if (total > 48 * 1024 * 1024) {
+      setError("Toplam yükleme boyutu 48 MB sınırını aşıyor.");
+      return;
+    }
+    setFiles(nextFiles);
   }
 
   async function startGeneration() {
-    if (!file || busy || exporting) return;
+    if (!files.length || busy || exporting) return;
     setBusy(true);
     setError("");
     setAssets([]);
     try {
       const body = new FormData();
-      body.append("image", file);
+      if (files.length === 1) {
+        body.append("image", files[0]);
+      } else {
+        files.forEach((file) => body.append("images", file));
+      }
       body.append("mode", mode);
       body.append("count", String(count));
       body.append("prompt", prompt);
-      const response = await fetch("/api/generate", { method: "POST", body });
+      const response = await fetch(files.length === 1 ? "/api/generate" : "/api/batch", { method: "POST", body });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Üretim başlatılamadı.");
       setJob(data.job as GenerationJob);
@@ -100,7 +114,7 @@ export default function Home() {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "ZIP dışa aktarma başarısız oldu.");
+      setError(err instanceof Error ? err.message : "ZIP indirilemedi.");
     } finally {
       setExporting(false);
     }
@@ -110,23 +124,23 @@ export default function Home() {
     <main className="shell">
       <header className="topbar">
         <div className="brand"><span className="brand-mark">AGT</span><span>Product AI</span></div>
-        <span className="status">v0.3 • generation controls</span>
+        <span className="status">v0.4 • batch studio</span>
       </header>
 
       <section className="hero">
         <div>
           <p className="eyebrow">AGT STUDIO</p>
           <h1>Ürün fotoğrafını<br /><span>satış içeriğine</span> dönüştür.</h1>
-          <p className="lead">Tek fotoğraf yükle. Ürünü koruyarak e-ticaret, stüdyo, lifestyle, detay ve sosyal medya içerikleri üret.</p>
-          <div className="trust-row"><span>✓ JPG / PNG / WEBP</span><span>✓ 12 MB</span><span>✓ Telefon kamerası</span></div>
+          <p className="lead">Tek fotoğraf veya ürün kataloğunu yükle. Ürünü koruyarak e-ticaret, stüdyo, lifestyle, detay ve sosyal medya içerikleri üret.</p>
+          <div className="trust-row"><span>✓ JPG / PNG / WEBP</span><span>✓ 12 MB / görsel</span><span>✓ 6 ürün / batch</span><span>✓ Telefon kamerası</span></div>
         </div>
 
         <label className={`dropzone ${preview ? "has-preview" : ""}`}>
-          <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={(e) => selectFile(e.target.files?.[0])} />
+          <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple onChange={(e) => selectFiles(Array.from(e.target.files ?? []))} />
           {preview ? <img src={preview} alt="Ürün önizleme" /> : <div className="upload-icon">＋</div>}
-          <strong>{file?.name || "Ürün fotoğrafını yükle"}</strong>
-          <small>{preview ? `${Math.round((file?.size ?? 0) / 1024)} KB • hazır` : "Telefonda kameradan çekebilir veya galeriden seçebilirsin"}</small>
-          {preview && <span className="change-file">Başka fotoğraf seç</span>}
+          <strong>{files.length ? `${files.length} ürün seçildi` : "Ürün fotoğraflarını yükle"}</strong>
+          <small>{files.length ? `${files[0].name}${files.length > 1 ? ` + ${files.length - 1} ürün` : ""}` : "Tek ürün veya aynı anda 6 ürüne kadar katalog seçebilirsin"}</small>
+          {files.length > 0 && <span className="change-file">Fotoğrafları değiştir</span>}
         </label>
       </section>
 
@@ -151,7 +165,7 @@ export default function Home() {
         </div>
 
         <div className="generation-controls">
-          <label><span>Görsel sayısı</span><select value={count} onChange={(e) => setCount(Number(e.target.value))}>{[1, 2, 3, 4].map((value) => <option key={value} value={value}>{value} görsel</option>)}</select></label>
+          <label><span>Ürün başına görsel</span><select value={count} onChange={(e) => setCount(Number(e.target.value))}>{[1, 2, 3, 4].map((value) => <option key={value} value={value}>{value} görsel</option>)}</select></label>
           <label className="prompt-field"><span>Ek talimat <small>isteğe bağlı</small></span><textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={1200} placeholder="Örn. ürünü değiştirme, premium doğal ışık, sade arka plan…" rows={3} /></label>
         </div>
 
@@ -176,16 +190,16 @@ export default function Home() {
         )}
 
         <div className="action-row">
-          <div><strong>{file ? "Fotoğraf hazır" : "Önce ürün fotoğrafını seç"}</strong><span className="muted"> • {selected.label} • {count} çıktı</span></div>
-          <button className="generate" disabled={!file || busy || exporting} onClick={startGeneration}>{busy ? "Üretim çalışıyor…" : "Üretmeye Başla →"}</button>
+          <div><strong>{files.length ? `${files.length} fotoğraf hazır` : "Önce ürün fotoğrafını seç"}</strong><span className="muted"> • {selected.label} • ürün başına {count} çıktı</span></div>
+          <button className="generate" disabled={!files.length || busy || exporting} onClick={startGeneration}>{busy ? "İşlem çalışıyor…" : files.length > 1 ? "Toplu Üretimi Başlat →" : "Üretmeye Başla →"}</button>
         </div>
       </section>
 
       <section className="pipeline">
-        <div><span>01</span><strong>Fotoğraf</strong><small>Yükle / çek</small></div>
+        <div><span>01</span><strong>Fotoğraf</strong><small>Tekli / katalog</small></div>
         <i>→</i><div><span>02</span><strong>Hazırla</strong><small>Ürün + preset</small></div>
-        <i>→</i><div><span>03</span><strong>AI İşleme</strong><small>Provider pipeline</small></div>
-        <i>→</i><div><span>04</span><strong>QA / İndir</strong><small>PNG / JPG / ZIP</small></div>
+        <i>→</i><div><span>03</span><strong>AI İşleme</strong><small>Qwen / ComfyUI</small></div>
+        <i>→</i><div><span>04</span><strong>QA / ZIP</strong><small>İndir / paketle</small></div>
       </section>
     </main>
   );

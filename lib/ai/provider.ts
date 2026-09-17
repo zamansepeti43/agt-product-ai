@@ -1,6 +1,7 @@
 import { ComfyUIProvider } from "./providers/comfyui";
 import { GeminiProvider } from "./providers/gemini";
-import type { ImageProvider } from "./types";
+import { buildAutoFreeCandidates, generateWithFallback, type ProviderConfigMap } from "./router";
+import type { ImageProvider, ProductImageInput } from "./types";
 
 const providers: Record<string, ImageProvider> = {
   comfyui: new ComfyUIProvider(),
@@ -18,4 +19,22 @@ export function configuredImageProviderId() {
 
 export function availableImageProviders() {
   return Object.keys(providers);
+}
+
+export function isAutoFreeProvider(id?: string) {
+  return (id || process.env.IMAGE_PROVIDER || "").trim().toLowerCase() === "auto-free";
+}
+
+export async function generateWithConfiguredStrategy(
+  providerId: string,
+  input: ProductImageInput,
+  configs: ProviderConfigMap = {},
+) {
+  if (providerId === "auto-free") {
+    return generateWithFallback(buildAutoFreeCandidates(providers, configs), input);
+  }
+
+  const provider = getImageProvider(providerId);
+  if (!provider) throw new Error("Desteklenen bir AI provider seçilmedi.");
+  return { assets: await provider.generate({ ...input, providerConfig: configs[providerId] || input.providerConfig }), providerId, skipped: [] };
 }

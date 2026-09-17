@@ -11,6 +11,7 @@ export type JobStatus = "queued" | "processing" | "completed" | "failed";
 export interface ProviderConfig {
   apiKey?: string;
   model?: string;
+  baseUrl?: string;
 }
 
 export interface ProductImageInput {

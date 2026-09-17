@@ -14,9 +14,9 @@ Mobile-first AI product studio for e-commerce creators.
 - configurable ComfyUI / Qwen Image Edit workflow integration
 - same-origin ComfyUI asset proxy
 - server-side ZIP export for generated assets
-- deterministic catalog title, description, tags and SEO keyword generation
-- Turkish and English catalog copy API
-- health endpoint exposing module readiness
+- deterministic Turkish/English catalog title, description, tags and SEO keyword generation
+- Windows Tauri 2 shell configuration
+- GitHub Actions Windows installer workflow
 
 ## Product vision
 
@@ -47,11 +47,19 @@ Phone / Browser / Tauri
           +-- /api/asset -------- safe provider image delivery
           +-- /api/catalog ------ catalog + SEO copy
           +-- /api/export/zip --- validated assets -> ZIP
+          |
+          +-- src-tauri -------- Windows desktop shell
 ```
 
 ## Catalog / SEO
 
-`POST /api/catalog` accepts product name, category, optional brand, keywords, marketplace and language. It returns structured title, short description, description, tags and SEO keywords. The current generator is deterministic and does not claim facts that were not supplied by the user; it is a reliable fallback until an optional LLM catalog provider is connected.
+`POST /api/catalog` accepts product name, category, optional brand, keywords, marketplace and language. It returns structured title, short description, description, tags and SEO keywords. The current generator is deterministic and does not invent product facts; it is a fallback that can later be paired with an LLM provider.
+
+## Windows desktop
+
+The `src-tauri` directory contains the Tauri 2 shell configuration and Rust entrypoint. The desktop app uses the same product workflow rather than duplicating the AI pipeline. The `.github/workflows/windows.yml` workflow builds Windows NSIS and MSI artifacts on manual dispatch or version tags.
+
+Before publishing an installer, configure the production frontend strategy for the deployment environment. The repository does not embed private API keys, ComfyUI credentials, model weights or third-party workflow files.
 
 ## ComfyUI connection
 
@@ -89,8 +97,8 @@ npm run build
 
 ## Roadmap
 
-1. Catalog export / copy-to-clipboard package
-2. Windows Tauri 2 shell
+1. Catalog copy-to-clipboard / export package
+2. Windows Tauri installer validation against the hosted frontend
 3. Optional persistent job history
-4. QA checks for generated assets
+4. Generated-image QA checks
 5. Product video pipeline

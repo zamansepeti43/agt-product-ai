@@ -16,7 +16,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
       - name: Install
         run: npm install
       - name: Typecheck
@@ -28,9 +27,7 @@ jobs:
           npm run start > /tmp/agt-product-ai.log 2>&1 &
           echo $! > /tmp/agt-product-ai.pid
           for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:3000/api/health > /tmp/agt-health.json; then
-              break
-            fi
+            if curl -fsS http://127.0.0.1:3000/api/health > /tmp/agt-health.json; then break; fi
             sleep 1
           done
           test -s /tmp/agt-health.json
@@ -39,8 +36,7 @@ jobs:
         run: |
           curl -fsS -X POST http://127.0.0.1:3000/api/catalog \
             -H 'Content-Type: application/json' \
-            -d '{"name":"Test Ürün","category":"Genel","brand":"AGT","keywords":["test","ürün"],"marketplace":"generic","language":"tr"}' \
-            > /tmp/agt-catalog.json
+            -d '{"name":"Test Ürün","category":"Genel","brand":"AGT","keywords":["test","ürün"],"marketplace":"generic","language":"tr"}' > /tmp/agt-catalog.json
           test -s /tmp/agt-catalog.json
           cat /tmp/agt-catalog.json
       - name: Stop production server

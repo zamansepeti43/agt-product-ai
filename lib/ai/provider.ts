@@ -11,9 +11,9 @@ const providers: Record<string, ImageProvider> = {
   aihorde: new AIHordeProvider(),
   cloudflare: new CloudflareImageProvider(),
   gemini: new GeminiProvider(),
+  openai: new OpenAICompatibleImageProvider(),
   "custom-openai": new OpenAICompatibleImageProvider(),
 };
-
 export function getImageProvider(id?: string): ImageProvider | null { const providerId = (id || process.env.IMAGE_PROVIDER || "").trim().toLowerCase(); return providerId ? providers[providerId] ?? null : null; }
 export function configuredImageProviderId() { return (process.env.IMAGE_PROVIDER || "not-configured").trim().toLowerCase(); }
 export function availableImageProviders() { return Object.keys(providers); }

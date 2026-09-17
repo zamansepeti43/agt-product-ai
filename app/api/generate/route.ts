@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getImageProvider, configuredImageProviderId } from "@/lib/ai/provider";
+import { configuredImageProviderId, generateWithConfiguredStrategy } from "@/lib/ai/provider";
 import { getPreset } from "@/lib/ai/presets";
 import type { GenerationJob, ImageJobMode, ProviderConfig } from "@/lib/ai/types";
+import type { ProviderConfigMap } from "@/lib/ai/router";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -10,13 +11,30 @@ export const maxDuration = 300;
 const MAX_FILE_SIZE = 12 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MODES = new Set<ImageJobMode>(["hero", "white", "studio", "lifestyle", "detail", "social"]);
-const PROVIDERS = new Set(["gemini", "comfyui"]);
+const PROVIDERS = new Set(["gemini", "comfyui", "auto-free"]);
 
 function readProviderConfig(formData: FormData) {
   const provider = String(formData.get("provider") || process.env.IMAGE_PROVIDER || "").trim().toLowerCase();
   const apiKey = String(formData.get("providerApiKey") || "").trim().slice(0, 500);
   const model = String(formData.get("providerModel") || "").trim().slice(0, 160);
-  return { provider, config: { apiKey, model } satisfies ProviderConfig };
+  const fallback: ProviderConfig = { apiKey, model };
+  let configs: ProviderConfigMap = provider && provider !== "auto-free" ? { [provider]: fallback } : {};
+  const rawConfigs = String(formData.get("providerConfigs") || "").trim();
+  if (rawConfigs) {
+    try {
+      const parsed = JSON.parse(rawConfigs) as Record<string, unknown>;
+      configs = Object.fromEntries(Object.entries(parsed).map(([id, value]) => {
+        const config = value && typeof value === "object" ? value as Record<string, unknown> : {};
+        return [id, {
+          apiKey: typeof config.apiKey === "string" ? config.apiKey.slice(0, 500) : undefined,
+          model: typeof config.model === "string" ? config.model.slice(0, 160) : undefined,
+        } satisfies ProviderConfig];
+      }));
+    } catch {
+      throw new Error("AI provider ayarları geçerli JSON değil.");
+    }
+  }
+  return { provider, configs };
 }
 
 export async function POST(request: Request) {
@@ -26,7 +44,7 @@ export async function POST(request: Request) {
     const rawMode = String(formData.get("mode") ?? "hero");
     const rawCount = Number(formData.get("count") ?? 1);
     const customPrompt = String(formData.get("prompt") ?? "").trim().slice(0, 1200);
-    const { provider: providerId, config: providerConfig } = readProviderConfig(formData);
+    const { provider: providerId, configs } = readProviderConfig(formData);
 
     if (!(file instanceof File)) return NextResponse.json({ error: "Ürün görseli gerekli." }, { status: 400 });
     if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ error: "Sadece JPG, PNG veya WEBP kabul edilir." }, { status: 415 });
@@ -38,39 +56,27 @@ export async function POST(request: Request) {
     const mode = rawMode as ImageJobMode;
     const preset = getPreset(mode);
     const effectiveProviderId = providerId || configuredImageProviderId();
-    const provider = getImageProvider(effectiveProviderId);
+    const hasStrategy = effectiveProviderId === "auto-free" || Boolean(effectiveProviderId);
     const prompt = customPrompt ? `${preset.prompt}\n\nEk kullanıcı talimatı: ${customPrompt}` : preset.prompt;
-
     const job: GenerationJob = {
-      id: randomUUID(),
-      status: provider ? "processing" : "queued",
-      mode,
-      provider: effectiveProviderId,
-      createdAt: new Date().toISOString(),
-      message: provider ? `${preset.label} üretimi başlatıldı.` : "Görsel doğrulandı. AI provider bağlantısı bekleniyor.",
+      id: randomUUID(), status: hasStrategy ? "processing" : "queued", mode,
+      provider: effectiveProviderId || "not-configured", createdAt: new Date().toISOString(),
+      message: hasStrategy ? `${preset.label} üretimi başlatıldı.` : "Görsel doğrulandı. AI provider bağlantısı bekleniyor.",
     };
 
-    if (!provider) {
-      return NextResponse.json({ job, input: { fileName: file.name, mimeType: file.type, sizeBytes: file.size, count: rawCount, preset } }, { status: 202 });
-    }
+    if (!hasStrategy) return NextResponse.json({ job, input: { fileName: file.name, mimeType: file.type, sizeBytes: file.size, count: rawCount, preset } }, { status: 202 });
 
-    const assets = await provider.generate({
-      sourceImage: file,
-      fileName: file.name,
-      mimeType: file.type,
-      mode,
-      prompt,
-      count: rawCount,
-      width: 1024,
-      height: mode === "studio" || mode === "lifestyle" || mode === "detail" || mode === "social" ? 1280 : 1024,
-      providerConfig,
-    });
+    const result = await generateWithConfiguredStrategy(effectiveProviderId, {
+      sourceImage: file, fileName: file.name, mimeType: file.type, mode, prompt, count: rawCount,
+      width: 1024, height: ["studio", "lifestyle", "detail", "social"].includes(mode) ? 1280 : 1024,
+    }, configs);
 
-    return NextResponse.json({
-      job: { ...job, status: "completed", message: `${assets.length} görsel üretildi.` },
-      assets,
-      input: { fileName: file.name, mimeType: file.type, sizeBytes: file.size, count: rawCount, preset },
-    }, { status: 200 });
+    const message = effectiveProviderId === "auto-free"
+      ? `${result.assets.length} görsel üretildi. Kullanılan motor: ${result.providerId}${result.skipped.length ? ` • Kota/limit nedeniyle atlanan: ${result.skipped.join(", ")}` : ""}.`
+      : `${result.assets.length} görsel üretildi.`;
+
+    return NextResponse.json({ job: { ...job, provider: result.providerId, status: "completed", message }, assets: result.assets,
+      input: { fileName: file.name, mimeType: file.type, sizeBytes: file.size, count: rawCount, preset } }, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Üretim sırasında bilinmeyen bir hata oluştu.";
     return NextResponse.json({ error: message }, { status: 500 });

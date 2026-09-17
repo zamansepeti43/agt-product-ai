@@ -12,7 +12,11 @@ android {
         targetSdk 35
         versionCode 1
         versionName "0.5.1"
-        buildConfigField "String", "APP_URL", "\\"${appUrl.replace('\\\\', '\\\\\\').replace('\\\"', '\\\\\"')}\\""
+        buildConfigField "String", "APP_URL", "\"" + appUrl.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     buildTypes {

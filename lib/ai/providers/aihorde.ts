@@ -1,9 +1,10 @@
 import type { GeneratedAsset, ImageProvider, ProductImageInput } from "../types";
 
 const BASE_URL = "https://aihorde.net/api/v2/generate";
-const ANONYMOUS_KEY = "0000000000";
 const DEFAULT_MODEL = "AlbedoBase XL (SDXL)";
 const MAX_WAIT_MS = 180_000;
+const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
+const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 function toDataUrl(bytes: ArrayBuffer, mimeType: string) {
   return `data:${mimeType || "image/png"};base64,${Buffer.from(bytes).toString("base64")}`;
@@ -11,6 +12,22 @@ function toDataUrl(bytes: ArrayBuffer, mimeType: string) {
 
 function errorMessage(data: any, fallback: string) {
   return data?.message || data?.rc || data?.error || fallback;
+}
+
+async function normalizeImage(raw: string) {
+  if (raw.startsWith("data:image/")) return raw;
+  let target: URL;
+  try { target = new URL(raw); } catch { throw new Error("AI Horde geçersiz görsel URL'si döndürdü."); }
+  if (target.protocol !== "https:") throw new Error("AI Horde görsel bağlantısı güvenli HTTPS olmalı.");
+  const response = await fetch(target, { cache: "no-store", redirect: "error" });
+  if (!response.ok) throw new Error(`AI Horde görseli alınamadı (${response.status}).`);
+  const contentType = (response.headers.get("content-type") || "").split(";")[0].toLowerCase();
+  if (!IMAGE_TYPES.has(contentType)) throw new Error("AI Horde geçerli bir görsel döndürmedi.");
+  const length = Number(response.headers.get("content-length") || 0);
+  if (length > MAX_IMAGE_BYTES) throw new Error("AI Horde görseli 12 MB sınırını aşıyor.");
+  const bytes = await response.arrayBuffer();
+  if (bytes.byteLength === 0 || bytes.byteLength > MAX_IMAGE_BYTES) throw new Error("AI Horde görseli 12 MB sınırını aşıyor.");
+  return toDataUrl(bytes, contentType);
 }
 
 export class AIHordeProvider implements ImageProvider {
@@ -39,14 +56,7 @@ export class AIHordeProvider implements ImageProvider {
         models: [model],
         source_image: source,
         source_processing: "img2img",
-        params: {
-          width,
-          height,
-          steps: 25,
-          n: count,
-          cfg_scale: 6,
-          sampler_name: "k_euler_a",
-        },
+        params: { width, height, steps: 25, n: count, cfg_scale: 6, sampler_name: "k_euler_a" },
         nsfw: false,
         censor_nsfw: true,
         r2: true,
@@ -72,17 +82,13 @@ export class AIHordeProvider implements ImageProvider {
       if (!statusResponse.ok) throw new Error(errorMessage(status, `AI Horde sonuç sorgusu başarısız (${statusResponse.status}).`));
 
       const generations = Array.isArray(status.generations) ? status.generations : [];
-      const assets = generations.map((generation: any, index: number) => {
-        const raw = String(generation?.img || "");
-        const url = raw.startsWith("data:image/") ? raw : raw;
-        return {
-          id: `aihorde-${submitted.id}-${index + 1}`,
-          url,
-          mode: input.mode,
-          width,
-          height,
-        } satisfies GeneratedAsset;
-      }).filter((asset: GeneratedAsset) => Boolean(asset.url));
+      const assets: GeneratedAsset[] = [];
+      for (let index = 0; index < generations.length; index += 1) {
+        const raw = String(generations[index]?.img || "");
+        if (!raw) continue;
+        const url = await normalizeImage(raw);
+        assets.push({ id: `aihorde-${submitted.id}-${index + 1}`, url, mode: input.mode, width, height });
+      }
 
       if (!assets.length) throw new Error("AI Horde üretimi tamamlandı fakat görsel döndürmedi.");
       return assets;

@@ -1,16 +1,28 @@
 import { NextResponse } from "next/server";
-import { configuredImageProviderId } from "@/lib/ai/provider";
+import { configuredImageProviderId, getImageProvider } from "@/lib/ai/provider";
+
+export const runtime = "nodejs";
 
 export async function GET() {
-  const imageProvider = configuredImageProviderId();
+  const providerId = configuredImageProviderId();
+  const provider = getImageProvider();
+  const workflowConfigured = Boolean(process.env.COMFYUI_WORKFLOW_JSON);
+
   return NextResponse.json({
     ok: true,
     service: "agt-product-ai",
-    version: "0.2.0",
+    version: "0.3.0",
     providers: {
-      image: imageProvider,
+      image: provider ? provider.id : providerId,
+      imageReady: Boolean(provider && (provider.id !== "comfyui" || workflowConfigured)),
       background: process.env.BACKGROUND_PROVIDER || "not-configured",
-      video: process.env.VIDEO_PROVIDER || "planned",
+      video: "planned",
+    },
+    config: {
+      comfyui: providerId === "comfyui" ? {
+        baseUrlConfigured: Boolean(process.env.COMFYUI_BASE_URL),
+        workflowConfigured,
+      } : null,
     },
   });
 }

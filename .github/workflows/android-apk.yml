@@ -14,7 +14,7 @@ on:
         default: "https://agt-product-ai.vercel.app"
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   APP_URL: ${{ github.event.inputs.app_url || 'https://agt-product-ai.vercel.app' }}
@@ -41,15 +41,24 @@ jobs:
         working-directory: android
         run: gradle assembleRelease -PappUrl="$APP_URL"
 
-      - name: Rename APK
+      - name: Prepare APK
         run: |
           mkdir -p dist
           cp android/app/build/outputs/apk/release/app-release.apk "dist/AGT-Product-AI.apk"
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: AGT-Product-AI-APK
           path: dist/AGT-Product-AI.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: AGT Product AI APK ${{ github.run_number }}
+          body: "AGT Product AI Android APK. Built automatically from main."
+          files: dist/AGT-Product-AI.apk
+          make_latest: true

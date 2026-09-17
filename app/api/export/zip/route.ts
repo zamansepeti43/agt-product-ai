@@ -169,7 +169,9 @@ export async function POST(request: Request) {
     }
 
     const zip = makeZip(files);
-    return new NextResponse(zip.buffer as ArrayBuffer, {
+    const bodyBuffer = new ArrayBuffer(zip.byteLength);
+    new Uint8Array(bodyBuffer).set(zip);
+    return new NextResponse(bodyBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/zip",

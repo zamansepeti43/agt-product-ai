@@ -2,24 +2,26 @@
 
 Folio-inspired, mobile-first AI product studio for e-commerce creators.
 
-## Current build — v0.3
+## Current build — v0.4
 
 The functional foundation now includes:
 
 - responsive product studio UI
 - mobile camera/gallery input
 - JPG / PNG / WEBP validation
-- 12 MB upload guard
+- 12 MB per-image and 48 MB batch upload guards
 - product preview
 - six commercial image presets
 - 1–4 output generation control
 - optional per-generation prompt instruction
-- server-side generation intake API
+- single-product and up-to-6-product batch generation
 - provider registry
 - configurable ComfyUI adapter
 - Qwen Image Edit-ready workflow placeholders
 - real generated-asset gallery
-- secure server-side ZIP export for ComfyUI outputs
+- same-origin ComfyUI asset proxy
+- secure server-side ZIP export for up to 24 assets / 50 MB
+- cache-safe PWA shell
 - health endpoint with provider/workflow status
 - provider-independent prompt presets
 
@@ -53,23 +55,19 @@ Phone / Browser / Tauri
           v
       Next.js UI
           |
-          +------ /api/generate
-          |             |
-          |             +-- Provider registry
-          |                    +-- ComfyUI
-          |                           +-- Qwen Image Edit workflow
-          |                           +-- custom workflows
+          +------ /api/generate ---- Provider registry ---- ComfyUI
+          |                                      |
+          |                                      +-- Qwen Image Edit workflow
+          |                                      +-- custom licensed workflows
           |
-          +------ /api/export/zip
-          |             +-- validated provider assets
-          |             +-- ZIP package
+          +------ /api/batch -------- same provider pipeline
           |
-          +------ Background provider
-          |             +-- BiRefNet
+          +------ /api/asset -------- same-origin image delivery
+          |
+          +------ /api/export/zip --- validated provider assets -> ZIP
           |
           +------ Future modules
                         +-- QA
-                        +-- batch queue
                         +-- catalog/SEO
                         +-- image-to-video
 ```
@@ -85,18 +83,20 @@ COMFYUI_TIMEOUT_MS=180000
 COMFYUI_WORKFLOW_JSON={...}
 ```
 
-The workflow JSON is intentionally provider-configurable. The adapter replaces these placeholders before submitting the workflow:
+The workflow JSON is provider-configurable. The adapter replaces these placeholders:
 
 - `__IMAGE__`
 - `__PROMPT__`
 - `__WIDTH__`
 - `__HEIGHT__`
 
-The application does not bundle model weights or third-party workflow files. This keeps the code independent from a single ComfyUI node layout while allowing a licensed Qwen Image Edit workflow to be connected through configuration.
+The application does not bundle model weights or third-party workflow files. A licensed Qwen Image Edit workflow can be connected through configuration.
+
+Generated `/view` assets are delivered through `/api/asset`, which only accepts the exact origin configured in `COMFYUI_BASE_URL`, the `/view` path, and image content up to 12 MB.
 
 ## ZIP export
 
-After generation, the result gallery can package up to 8 provider assets into `AGT-Product-AI-export.zip`. The export endpoint only accepts `/view` URLs whose origin exactly matches `COMFYUI_BASE_URL`; arbitrary remote URLs are rejected to reduce SSRF risk. The current export has a 50 MB total payload guard.
+The result gallery can package up to 24 provider assets into `AGT-Product-AI-export.zip`, with a 50 MB total payload guard. Only `/view` URLs from the configured ComfyUI origin are accepted.
 
 ## Development
 

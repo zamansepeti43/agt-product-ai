@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { configuredImageProviderId, getImageProvider } from "@/lib/ai/provider";
+import { availableImageProviders, configuredImageProviderId, getImageProvider } from "@/lib/ai/provider";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export async function GET() {
     service: "agt-product-ai",
     version: "0.5.1",
     modules: { imageGeneration: imageReady, batch: true, catalogSeo: true, zipExport: true, windows: "available", video: "planned" },
-    providers: { image: provider ? provider.id : providerId, imageReady, background: process.env.BACKGROUND_PROVIDER || "not-configured" },
-    config: { comfyui: providerId === "comfyui" ? { baseUrlConfigured, workflowConfigured } : null },
+    providers: { image: provider ? provider.id : providerId, available: availableImageProviders(), imageReady, background: process.env.BACKGROUND_PROVIDER || "not-configured" },
+    config: { comfyui: { baseUrlConfigured, workflowConfigured } },
   }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -10,19 +10,12 @@ export async function GET() {
   const workflowConfigured = Boolean(process.env.COMFYUI_WORKFLOW_JSON);
   const baseUrlConfigured = Boolean(process.env.COMFYUI_BASE_URL);
   const imageReady = Boolean(provider && (provider.id !== "comfyui" || workflowConfigured));
-
   return NextResponse.json({
     ok: true,
     service: "agt-product-ai",
-    version: "0.4.0",
-    providers: {
-      image: provider ? provider.id : providerId,
-      imageReady,
-      background: process.env.BACKGROUND_PROVIDER || "not-configured",
-      video: "planned",
-    },
-    config: {
-      comfyui: providerId === "comfyui" ? { baseUrlConfigured, workflowConfigured } : null,
-    },
+    version: "0.5.0",
+    modules: { imageGeneration: imageReady, batch: true, catalogSeo: true, zipExport: true, windows: "planned", video: "planned" },
+    providers: { image: provider ? provider.id : providerId, imageReady, background: process.env.BACKGROUND_PROVIDER || "not-configured" },
+    config: { comfyui: providerId === "comfyui" ? { baseUrlConfigured, workflowConfigured } : null },
   }, { headers: { "Cache-Control": "no-store" } });
 }

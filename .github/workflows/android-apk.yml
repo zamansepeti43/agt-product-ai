@@ -44,7 +44,9 @@ jobs:
       - name: Prepare APK
         run: |
           mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-release.apk "dist/AGT-Product-AI.apk"
+          APK=$(find android/app/build/outputs/apk/release -maxdepth 1 -type f -name "*.apk" | head -n 1)
+          test -n "$APK"
+          cp "$APK" "dist/AGT-Product-AI.apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

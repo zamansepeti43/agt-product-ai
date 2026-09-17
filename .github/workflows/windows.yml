@@ -2,6 +2,11 @@ name: Windows Desktop
 
 on:
   workflow_dispatch:
+    inputs:
+      app_url:
+        description: "Hosted AGT Product AI URL"
+        required: true
+        type: string
   push:
     tags:
       - "v*"
@@ -12,21 +17,32 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - name: Install Node dependencies
-        run: npm install
-      - name: Build Next static shell
-        run: npm run build
+
+      - name: Resolve app URL
+        shell: pwsh
+        env:
+          INPUT_APP_URL: ${{ inputs.app_url }}
+          TAG_APP_URL: ${{ vars.AGT_PRODUCT_AI_URL }}
+        run: |
+          $url = if ($env:INPUT_APP_URL) { $env:INPUT_APP_URL } else { $env:TAG_APP_URL }
+          if (-not $url) { throw "AGT_PRODUCT_AI_URL is not configured. For a tag build, add it as a repository variable." }
+          try {
+            $parsed = [System.Uri]$url
+            if ($parsed.Scheme -notin @('https','http') -or -not $parsed.Host) { throw "URL must use http or https." }
+          } catch { throw "Invalid AGT Product AI URL: $url" }
+          $template = Get-Content -Raw -Path "desktop-dist/index.template.html"
+          $html = $template.Replace('__AGT_APP_URL__', $url)
+          Set-Content -Path "desktop-dist/index.html" -Value $html -Encoding utf8
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
       - name: Install Tauri CLI
         run: cargo install tauri-cli --locked
+
       - name: Build Windows installer
         run: cargo tauri build
+
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:

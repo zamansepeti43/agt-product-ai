@@ -1,6 +1,7 @@
 import type { GeneratedAsset, ImageProvider, ProductImageInput } from "../types";
 
 const BASE_URL = "https://aihorde.net/api/v2/generate";
+const ANONYMOUS_KEY = "0000000000";
 const DEFAULT_MODEL = "AlbedoBase XL (SDXL)";
 const MAX_WAIT_MS = 180_000;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -19,7 +20,7 @@ async function normalizeImage(raw: string) {
   let target: URL;
   try { target = new URL(raw); } catch { throw new Error("AI Horde geçersiz görsel URL'si döndürdü."); }
   if (target.protocol !== "https:") throw new Error("AI Horde görsel bağlantısı güvenli HTTPS olmalı.");
-  const response = await fetch(target, { cache: "no-store", redirect: "error" });
+  const response = await fetch(target, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30_000) });
   if (!response.ok) throw new Error(`AI Horde görseli alınamadı (${response.status}).`);
   const contentType = (response.headers.get("content-type") || "").split(";")[0].toLowerCase();
   if (!IMAGE_TYPES.has(contentType)) throw new Error("AI Horde geçerli bir görsel döndürmedi.");
@@ -34,9 +35,7 @@ export class AIHordeProvider implements ImageProvider {
   readonly id = "aihorde";
 
   async generate(input: ProductImageInput): Promise<GeneratedAsset[]> {
-    const apiKey = input.providerConfig?.apiKey?.trim() || process.env.AIHORDE_API_KEY?.trim();
-    if (!apiKey) throw new Error("AI Horde için ücretsiz API anahtarını bağlaman gerekiyor.");
-
+    const apiKey = input.providerConfig?.apiKey?.trim() || process.env.AIHORDE_API_KEY?.trim() || ANONYMOUS_KEY;
     const model = input.providerConfig?.model?.trim() || process.env.AIHORDE_MODEL?.trim() || DEFAULT_MODEL;
     const width = Math.min(1024, Math.max(512, input.width || 1024));
     const height = Math.min(1024, Math.max(512, input.height || 1024));
@@ -64,6 +63,7 @@ export class AIHordeProvider implements ImageProvider {
         replacement_filter: true,
         allow_downgrade: true,
       }),
+      signal: AbortSignal.timeout(30_000),
     });
     const submitted = await response.json().catch(() => ({}));
     if (!response.ok || !submitted.id) throw new Error(errorMessage(submitted, `AI Horde isteği başarısız (${response.status}).`));
@@ -71,13 +71,13 @@ export class AIHordeProvider implements ImageProvider {
     const started = Date.now();
     while (Date.now() - started < MAX_WAIT_MS) {
       await new Promise((resolve) => setTimeout(resolve, 1800));
-      const checkResponse = await fetch(`${BASE_URL}/check/${encodeURIComponent(submitted.id)}`, { headers: { apikey: apiKey } });
+      const checkResponse = await fetch(`${BASE_URL}/check/${encodeURIComponent(submitted.id)}`, { headers: { apikey: apiKey }, signal: AbortSignal.timeout(30_000) });
       const check = await checkResponse.json().catch(() => ({}));
       if (!checkResponse.ok) throw new Error(errorMessage(check, `AI Horde durum sorgusu başarısız (${checkResponse.status}).`));
       if (check.faulted) throw new Error(check.message || "AI Horde üretimi başarısız oldu.");
       if (!check.done) continue;
 
-      const statusResponse = await fetch(`${BASE_URL}/status/${encodeURIComponent(submitted.id)}`, { headers: { apikey: apiKey } });
+      const statusResponse = await fetch(`${BASE_URL}/status/${encodeURIComponent(submitted.id)}`, { headers: { apikey: apiKey }, signal: AbortSignal.timeout(30_000) });
       const status = await statusResponse.json().catch(() => ({}));
       if (!statusResponse.ok) throw new Error(errorMessage(status, `AI Horde sonuç sorgusu başarısız (${statusResponse.status}).`));
 

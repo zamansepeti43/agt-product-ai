@@ -9,7 +9,9 @@ export type ImageJobMode =
 export type JobStatus = "queued" | "processing" | "completed" | "failed";
 
 export interface ProductImageInput {
-  sourceImageUrl: string;
+  sourceImage: Blob;
+  fileName?: string;
+  mimeType?: string;
   mode: ImageJobMode;
   prompt?: string;
   width?: number;

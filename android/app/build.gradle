@@ -1,0 +1,24 @@
+plugins { id "com.android.application" }
+
+def appUrl = project.findProperty("appUrl") ?: "https://agt-product-ai.vercel.app"
+
+android {
+    namespace "com.agtstudio.productai"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.agtstudio.productai"
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName "0.5.1"
+        buildConfigField "String", "APP_URL", "\\"${appUrl.replace('\\\\', '\\\\\\').replace('\\\"', '\\\\\"')}\\""
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+}

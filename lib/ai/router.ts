@@ -10,7 +10,7 @@ export interface ProviderCandidate {
 
 export function looksLikeQuotaOrRateLimitError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || "");
-  return /429|resource_exhausted|quota|rate limit|rate_limit|too many requests|limit:\s*0|insufficient|yapılandırılmamış|not configured|not-configured|fetch failed|econnrefused|timed? ?out|timeout/i.test(message);
+  return /429|resource_exhausted|quota|rate limit|rate_limit|too many requests|limit:\s*0|insufficient|yapılandırılmamış|not configured|not-configured|fetch failed|econnrefused|timed? ?out|timeout|kuyruk|yüksek yük|restricted/i.test(message);
 }
 
 export async function generateWithFallback(candidates: ProviderCandidate[], input: ProductImageInput): Promise<{ assets: GeneratedAsset[]; providerId: string; skipped: string[] }> {
@@ -32,8 +32,15 @@ export async function generateWithFallback(candidates: ProviderCandidate[], inpu
 }
 
 export function buildAutoFreeCandidates(providers: Record<string, ImageProvider>, configs: ProviderConfigMap) {
-  // Only providers explicitly known to be free/self-hosted belong here.
-  // Paid-only API models such as current Gemini image API models stay manual.
-  const preferredOrder = ["comfyui", "pollinations-free", "huggingface-free"];
-  return preferredOrder.filter((id) => providers[id]).map((id) => ({ id, provider: providers[id], config: configs[id] }));
+  // Only genuinely free/self-hosted providers belong in this pool.
+  // Gemini image models are intentionally excluded because their current API image tier is paid-only.
+  // AI Horde is included only when a registered key is configured; anonymous image-to-image requests can be shared by the service.
+  const preferredOrder = ["comfyui", "aihorde"];
+  return preferredOrder
+    .filter((id) => {
+      if (!providers[id]) return false;
+      if (id === "aihorde") return Boolean(configs[id]?.apiKey?.trim() || process.env.AIHORDE_API_KEY?.trim());
+      return true;
+    })
+    .map((id) => ({ id, provider: providers[id], config: configs[id] }));
 }

@@ -21,6 +21,10 @@ export default function Home() {
   );
 
   useEffect(() => {
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
     if (!file) {
       setPreview("");
       return;

@@ -14,7 +14,7 @@ export async function GET() {
     ok: true,
     service: "agt-product-ai",
     version: "0.5.0",
-    modules: { imageGeneration: imageReady, batch: true, catalogSeo: true, zipExport: true, windows: "planned", video: "planned" },
+    modules: { imageGeneration: imageReady, batch: true, catalogSeo: true, zipExport: true, windows: "available", video: "planned" },
     providers: { image: provider ? provider.id : providerId, imageReady, background: process.env.BACKGROUND_PROVIDER || "not-configured" },
     config: { comfyui: providerId === "comfyui" ? { baseUrlConfigured, workflowConfigured } : null },
   }, { headers: { "Cache-Control": "no-store" } });

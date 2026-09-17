@@ -18,6 +18,7 @@ permissions:
 
 env:
   APP_URL: ${{ github.event.inputs.app_url || 'https://agt-product-ai.vercel.app' }}
+  APK_PASSWORD: agtproductai
 
 jobs:
   build-apk:
@@ -37,16 +38,30 @@ jobs:
         with:
           gradle-version: "8.10.2"
 
-      - name: Build release APK
+      - name: Build APK
         working-directory: android
         run: gradle assembleDebug -PappUrl="$APP_URL"
 
-      - name: Prepare APK
+      - name: Create signing key
+        run: |
+          keytool -genkeypair -v \
+            -keystore "$RUNNER_TEMP/agt-product-ai.keystore" \
+            -alias agtproductai \
+            -keyalg RSA -keysize 2048 \
+            -validity 10000 \
+            -storepass "$APK_PASSWORD" \
+            -keypass "$APK_PASSWORD" \
+            -dname "CN=AGT Product AI, OU=AGT Studio, O=AGT Studio, L=Istanbul, ST=Istanbul, C=TR"
+
+      - name: Sign and verify APK
         run: |
           mkdir -p dist
-          APK=$(find android/app/build/outputs/apk/debug -maxdepth 1 -type f -name "*.apk" | head -n 1)
-          test -n "$APK"
-          cp "$APK" "dist/AGT-Product-AI.apk"
+          UNSIGNED="android/app/build/outputs/apk/debug/app-debug.apk"
+          SIGNED="dist/AGT-Product-AI.apk"
+          cp "$UNSIGNED" "$SIGNED"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$APKSIGNER" sign --ks "$RUNNER_TEMP/agt-product-ai.keystore" --ks-key-alias agtproductai --ks-pass pass:"$APK_PASSWORD" --key-pass pass:"$APK_PASSWORD" --out "$SIGNED" "$UNSIGNED"
+          "$APKSIGNER" verify --verbose "$SIGNED"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -61,6 +76,6 @@ jobs:
         with:
           tag_name: apk-${{ github.run_number }}
           name: AGT Product AI APK ${{ github.run_number }}
-          body: "AGT Product AI Android APK. Built automatically from main."
+          body: "AGT Product AI Android APK. Signed and verified automatically from main."
           files: dist/AGT-Product-AI.apk
           make_latest: true

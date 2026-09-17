@@ -11,7 +11,7 @@ const MAX_FILES = 6;
 const providers: { id: ProviderId; label: string; note: string; icon: string }[] = [
   { id: "auto-free", label: "Ücretsiz otomatik", note: "ComfyUI + AI Horde fallback", icon: "🆓" },
   { id: "comfyui", label: "ComfyUI / Qwen", note: "Yerel veya kendi sunucun", icon: "🧩" },
-  { id: "aihorde", label: "AI Horde", note: "Topluluk GPU ağı", icon: "🌐" },
+  { id: "aihorde", label: "AI Horde", note: "Topluluk GPU ağı • anahtarsız da denenebilir", icon: "🌐" },
   { id: "gemini", label: "Google Gemini", note: "Kendi Gemini API anahtarın", icon: "✨" },
   { id: "openai", label: "OpenAI", note: "OpenAI Image API", icon: "◉" },
   { id: "cloudflare", label: "Cloudflare Workers AI", note: "Account ID + API Token", icon: "☁️" },
@@ -75,7 +75,7 @@ export default function ProductStudio() {
 
   async function generate() {
     if (!files.length || busy) return;
-    if (["gemini", "aihorde", "openai", "custom-openai"].includes(provider) && !apiKey.trim()) return setError("Bu provider için API anahtarı gerekli.");
+    if (["gemini", "openai", "custom-openai"].includes(provider) && !apiKey.trim()) return setError("Bu provider için API anahtarı gerekli.");
     if (provider === "cloudflare" && (!apiKey.trim() || !accountId.trim())) return setError("Cloudflare için Account ID ve API Token gerekli.");
     if (["openai", "custom-openai"].includes(provider) && !model.trim()) return setError("Model adı gerekli.");
     if (provider === "custom-openai" && !baseUrl.trim()) return setError("Özel API Base URL gerekli.");
@@ -89,7 +89,7 @@ export default function ProductStudio() {
       if (baseUrl.trim()) body.append("providerBaseUrl", baseUrl.trim());
       if (accountId.trim()) body.append("providerAccountId", accountId.trim());
       const config: Record<string, ProviderConfig> = {};
-      if (provider === "auto-free" && apiKey.trim()) config.aihorde = { apiKey: apiKey.trim() };
+      if ((provider === "auto-free" || provider === "aihorde") && apiKey.trim()) config.aihorde = { apiKey: apiKey.trim() };
       if (provider === "openai") config.openai = { apiKey: apiKey.trim(), model: model.trim(), baseUrl: baseUrl.trim() };
       if (provider === "cloudflare") config.cloudflare = { apiKey: apiKey.trim(), model: model.trim(), accountId: accountId.trim() };
       if (provider === "custom-openai") config["custom-openai"] = { apiKey: apiKey.trim(), model: model.trim(), baseUrl: baseUrl.trim() };
@@ -131,13 +131,13 @@ export default function ProductStudio() {
       {provider !== "comfyui" && <div style={styles.fields}>
         {provider === "cloudflare" && <input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Cloudflare Account ID" />}
         {provider === "auto-free" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="AI Horde API Key (opsiyonel)" autoComplete="off" />}
-        {provider !== "auto-free" && provider !== "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={`${selectedProvider.label} API Key`} autoComplete="off" />}
+        {provider !== "auto-free" && provider !== "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={`${selectedProvider.label} API Key (opsiyonel)`} autoComplete="off" />}
         {provider === "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Cloudflare API Token" autoComplete="off" />}
         {["openai", "custom-openai", "cloudflare", "aihorde", "gemini"].includes(provider) && <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Model adı" />}
         {(provider === "openai" || provider === "custom-openai") && <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="API Base URL" />}
       </div>}
-      {provider === "auto-free" && <p style={styles.help}>🆓 Önce yapılandırılmış ComfyUI, sonra bağlı AI Horde denenir. Gemini/OpenAI/Cloudflare otomatik ücretsiz havuza dahil değildir. AI Horde anahtarı istersen buraya eklenebilir; anahtar ücretsiz erişim garantisi anlamına gelmez.</p>}
-      {provider === "cloudflare" && <p style={styles.help}>Cloudflare img2img için Account ID + API Token gerekir. Model alanı varsayılan olarak desteklenen img2img modeline ayarlanır.</p>}
+      {provider === "auto-free" && <p style={styles.help}>🆓 Önce yapılandırılmış ComfyUI, sonra AI Horde denenir. Gemini/OpenAI/Cloudflare otomatik ücretsiz havuza dahil değildir. AI Horde anahtarı opsiyoneldir; anahtarsız istekler topluluk kuyruğuna bağlı olabilir.</p>}
+      {provider === "aihorde" && <p style={styles.help}>🌐 API anahtarı opsiyoneldir. Anahtarsız kullanımda topluluk kuyruğu ve erişim politikaları geçerli olabilir.</p>}{provider === "cloudflare" && <p style={styles.help}>Cloudflare img2img için Account ID + API Token gerekir. Model alanı varsayılan olarak desteklenen img2img modeline ayarlanır.</p>}
     </section>
 
     <section style={styles.card}><div style={styles.cardHead}><div><p style={styles.kicker}>3 • ÜRET</p><h2 style={styles.h2}>Son ayarlar</h2></div></div><div style={styles.controls}><label>Görsel sayısı<select value={count} onChange={(e) => setCount(Number(e.target.value))}>{[1,2,3,4].map((n) => <option key={n}>{n}</option>)}</select></label><label style={{ flex: 1 }}>Ek talimat<textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={1200} rows={3} placeholder="Örn. ürünü değiştirme, premium doğal ışık, sade arka plan…" /></label></div><button onClick={generate} disabled={!files.length || busy} style={styles.generate}>{busy ? "⏳ Üretiliyor…" : `✨ ${selectedProvider.label} ile görsel üret`}</button>{error && <div style={styles.error}>{error}</div>}{job && <div style={styles.success}>✓ {job.message}</div>}</section>

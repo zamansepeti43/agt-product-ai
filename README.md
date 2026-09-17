@@ -48,7 +48,7 @@ Phone / Browser / Tauri
           +-- /api/catalog ------ catalog + SEO copy
           +-- /api/export/zip --- validated assets -> ZIP
           |
-          +-- src-tauri -------- Windows desktop shell
+          +-- src-tauri -------- Windows hosted-app shell
 ```
 
 ## Catalog / SEO
@@ -57,9 +57,11 @@ Phone / Browser / Tauri
 
 ## Windows desktop
 
-The `src-tauri` directory contains the Tauri 2 shell configuration and Rust entrypoint. The desktop app uses the same product workflow rather than duplicating the AI pipeline. The `.github/workflows/windows.yml` workflow builds Windows NSIS and MSI artifacts on manual dispatch or version tags.
+`src-tauri` contains a Tauri 2 native shell. The installer packages a small local launcher that opens the configured hosted AGT Product AI deployment, so the desktop client and web/PWA client share the same UI and server-side AI pipeline.
 
-Before publishing an installer, configure the production frontend strategy for the deployment environment. The repository does not embed private API keys, ComfyUI credentials, model weights or third-party workflow files.
+For manual Windows builds, the GitHub Actions workflow requires an `app_url` input. Version-tag builds use the repository variable `AGT_PRODUCT_AI_URL`. The URL must be `http://` or `https://` and must point to the deployed AGT Product AI application.
+
+The repository does not embed private API keys, ComfyUI credentials, model weights or third-party workflow files in the desktop bundle.
 
 ## ComfyUI connection
 

@@ -1,0 +1,57 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/android-apk.yml"
+      - "android/**"
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "Web app URL to package"
+        required: false
+        default: "https://agt-product-ai.vercel.app"
+
+permissions:
+  contents: read
+
+env:
+  APP_URL: ${{ github.event.inputs.app_url || 'https://agt-product-ai.vercel.app' }}
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Build release APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease -PappUrl="$APP_URL"
+
+      - name: Rename APK
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/AGT-Product-AI.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AGT-Product-AI-APK
+          path: dist/AGT-Product-AI.apk
+          if-no-files-found: error
+          retention-days: 30

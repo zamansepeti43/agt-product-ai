@@ -20,6 +20,16 @@ function uniqueWords(values: string[]) {
   return result;
 }
 
+function marketplaceTags(values: string[]) {
+  // Etsy currently limits each listing tag to 20 characters; keeping the
+  // generator within that boundary also makes its output safer to paste into
+  // other marketplace editors.
+  return uniqueWords(values)
+    .map((value) => value.slice(0, 20).trim())
+    .filter(Boolean)
+    .slice(0, 13);
+}
+
 export function generateCatalogCopy(input: ProductCatalogInput = {}): ProductCatalogOutput {
   const language = input.language ?? "tr";
   const name = clean(input.name, language === "tr" ? "Ürün" : "Product");
@@ -27,27 +37,26 @@ export function generateCatalogCopy(input: ProductCatalogInput = {}): ProductCat
   const brand = clean(input.brand, "");
   const keywords = uniqueWords([category, brand, ...(input.keywords ?? [])]).slice(0, 12);
   const marketplace = input.marketplace ?? "generic";
+  const tagSeed = [name, category, brand, ...(input.keywords ?? [])];
 
   if (language === "en") {
     const title = [brand, name, category].filter(Boolean).join(" — ").slice(0, 140);
-    const tagSeed = uniqueWords([name, category, brand, ...(input.keywords ?? [])]);
     return {
       title,
       shortDescription: `A polished ${category} presentation for online marketplaces and social commerce.`,
       description: `${title}. Designed for a clear, professional product presentation with consistent naming, searchable keywords and marketplace-ready copy.`,
-      tags: tagSeed.slice(0, 13),
+      tags: marketplaceTags(tagSeed),
       seoKeywords: keywords,
       marketplace,
     };
   }
 
   const title = [brand, name, category].filter(Boolean).join(" — ").slice(0, 140);
-  const tagSeed = uniqueWords([name, category, brand, ...(input.keywords ?? [])]);
   return {
     title,
     shortDescription: `${category} için temiz, profesyonel ve pazaryeri uyumlu ürün sunumu.`,
     description: `${title}. Ürünü net biçimde anlatan, aranabilir anahtar kelimeler içeren ve e-ticaret listelemelerinde kullanılabilecek düzenli ürün açıklaması.`,
-    tags: tagSeed.slice(0, 13),
+    tags: marketplaceTags(tagSeed),
     seoKeywords: keywords,
     marketplace,
   };

@@ -13,7 +13,7 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     service: "agt-product-ai",
-    version: "0.5.0",
+    version: "0.5.1",
     modules: { imageGeneration: imageReady, batch: true, catalogSeo: true, zipExport: true, windows: "available", video: "planned" },
     providers: { image: provider ? provider.id : providerId, imageReady, background: process.env.BACKGROUND_PROVIDER || "not-configured" },
     config: { comfyui: providerId === "comfyui" ? { baseUrlConfigured, workflowConfigured } : null },

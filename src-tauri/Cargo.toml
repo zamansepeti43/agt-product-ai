@@ -1,6 +1,6 @@
 [package]
 name = "agt-product-ai"
-version = "0.5.0"
+version = "0.5.1"
 description = "AGT Product AI desktop shell"
 authors = ["AGT Studio"]
 edition = "2021"

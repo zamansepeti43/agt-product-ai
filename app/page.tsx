@@ -10,6 +10,8 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [mode, setMode] = useState<ImageJobMode>("hero");
+  const [count, setCount] = useState(1);
+  const [prompt, setPrompt] = useState("");
   const [job, setJob] = useState<GenerationJob | null>(null);
   const [assets, setAssets] = useState<GeneratedAsset[]>([]);
   const [busy, setBusy] = useState(false);
@@ -59,6 +61,8 @@ export default function Home() {
       const body = new FormData();
       body.append("image", file);
       body.append("mode", mode);
+      body.append("count", String(count));
+      body.append("prompt", prompt);
       const response = await fetch("/api/generate", { method: "POST", body });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Üretim başlatılamadı.");
@@ -75,7 +79,7 @@ export default function Home() {
     <main className="shell">
       <header className="topbar">
         <div className="brand"><span className="brand-mark">AGT</span><span>Product AI</span></div>
-        <span className="status">v0.2 • mobile + desktop</span>
+        <span className="status">v0.3 • generation controls</span>
       </header>
 
       <section className="hero">
@@ -115,6 +119,11 @@ export default function Home() {
           <div className="provider-pill">AI PROVIDER • {process.env.NEXT_PUBLIC_IMAGE_PROVIDER || "AUTO"}</div>
         </div>
 
+        <div className="generation-controls">
+          <label><span>Görsel sayısı</span><select value={count} onChange={(e) => setCount(Number(e.target.value))}>{[1, 2, 3, 4].map((value) => <option key={value} value={value}>{value} görsel</option>)}</select></label>
+          <label className="prompt-field"><span>Ek talimat <small>isteğe bağlı</small></span><textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={1200} placeholder="Örn. ürünü değiştirme, premium doğal ışık, sade arka plan…" rows={3} /></label>
+        </div>
+
         {error && <div className="notice error">{error}</div>}
         {job && <div className="notice success"><strong>✓ {job.message}</strong><small>Job: {job.id}</small></div>}
 
@@ -133,7 +142,7 @@ export default function Home() {
         )}
 
         <div className="action-row">
-          <div><strong>{file ? "Fotoğraf hazır" : "Önce ürün fotoğrafını seç"}</strong><span className="muted"> • {selected.label}</span></div>
+          <div><strong>{file ? "Fotoğraf hazır" : "Önce ürün fotoğrafını seç"}</strong><span className="muted"> • {selected.label} • {count} çıktı</span></div>
           <button className="generate" disabled={!file || busy} onClick={startGeneration}>{busy ? "Üretim çalışıyor…" : "Üretmeye Başla →"}</button>
         </div>
       </section>

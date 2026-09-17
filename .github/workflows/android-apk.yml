@@ -39,9 +39,7 @@ jobs:
 
       - name: Build release APK
         working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease -PappUrl="$APP_URL"
+        run: gradle assembleRelease -PappUrl="$APP_URL"
 
       - name: Rename APK
         run: |

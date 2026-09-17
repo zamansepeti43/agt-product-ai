@@ -16,16 +16,20 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get("image");
     const rawMode = String(formData.get("mode") ?? "hero");
+    const rawCount = Number(formData.get("count") ?? 1);
+    const customPrompt = String(formData.get("prompt") ?? "").trim().slice(0, 1200);
 
     if (!(file instanceof File)) return NextResponse.json({ error: "Ürün görseli gerekli." }, { status: 400 });
     if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ error: "Sadece JPG, PNG veya WEBP kabul edilir." }, { status: 415 });
     if (file.size === 0 || file.size > MAX_FILE_SIZE) return NextResponse.json({ error: "Görsel 12 MB'dan küçük olmalı." }, { status: 413 });
     if (!MODES.has(rawMode as ImageJobMode)) return NextResponse.json({ error: "Geçersiz üretim modu." }, { status: 400 });
+    if (!Number.isInteger(rawCount) || rawCount < 1 || rawCount > 4) return NextResponse.json({ error: "Görsel sayısı 1 ile 4 arasında olmalı." }, { status: 400 });
 
     const mode = rawMode as ImageJobMode;
     const preset = getPreset(mode);
     const providerId = configuredImageProviderId();
     const provider = getImageProvider();
+    const prompt = customPrompt ? `${preset.prompt}\n\nEk kullanıcı talimatı: ${customPrompt}` : preset.prompt;
 
     const job: GenerationJob = {
       id: randomUUID(),
@@ -33,13 +37,11 @@ export async function POST(request: Request) {
       mode,
       provider: providerId,
       createdAt: new Date().toISOString(),
-      message: provider
-        ? `${preset.label} üretimi başlatıldı.`
-        : "Görsel doğrulandı. AI provider bağlantısı bekleniyor.",
+      message: provider ? `${preset.label} üretimi başlatıldı.` : "Görsel doğrulandı. AI provider bağlantısı bekleniyor.",
     };
 
     if (!provider) {
-      return NextResponse.json({ job, input: { fileName: file.name, mimeType: file.type, sizeBytes: file.size, preset } }, { status: 202 });
+      return NextResponse.json({ job, input: { fileName: file.name, mimeType: file.type, sizeBytes: file.size, count: rawCount, preset } }, { status: 202 });
     }
 
     const assets = await provider.generate({
@@ -47,15 +49,16 @@ export async function POST(request: Request) {
       fileName: file.name,
       mimeType: file.type,
       mode,
-      prompt: preset.prompt,
-      width: mode === "hero" || mode === "white" ? 1024 : 1024,
+      prompt,
+      count: rawCount,
+      width: 1024,
       height: mode === "studio" || mode === "lifestyle" || mode === "detail" || mode === "social" ? 1280 : 1024,
     });
 
     return NextResponse.json({
       job: { ...job, status: "completed", message: `${assets.length} görsel üretildi.` },
       assets,
-      input: { fileName: file.name, mimeType: file.type, sizeBytes: file.size, preset },
+      input: { fileName: file.name, mimeType: file.type, sizeBytes: file.size, count: rawCount, preset },
     }, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Üretim sırasında bilinmeyen bir hata oluştu.";

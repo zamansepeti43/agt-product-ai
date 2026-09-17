@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_ASSETS = 8;
+const MAX_ASSETS = 24;
 const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
 
 interface ZipAsset {
@@ -131,9 +131,12 @@ function makeZip(files: Array<{ name: string; data: Uint8Array }>) {
   return output;
 }
 
-function safeFileName(index: number, asset: ZipAsset) {
+function safeFileName(index: number, asset: ZipAsset, url: URL) {
   const mode = (asset.mode || "urun").replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 32) || "urun";
-  return `AGT-${String(index + 1).padStart(2, "0")}-${mode}.png`;
+  const sourceName = url.searchParams.get("filename") || "";
+  const extensionMatch = sourceName.match(/\.(png|jpe?g|webp)$/i);
+  const extension = extensionMatch ? extensionMatch[1].toLowerCase().replace("jpeg", "jpg") : "png";
+  return `AGT-${String(index + 1).padStart(2, "0")}-${mode}.${extension}`;
 }
 
 export async function POST(request: Request) {
@@ -162,7 +165,7 @@ export async function POST(request: Request) {
       const data = new Uint8Array(await response.arrayBuffer());
       totalBytes += data.byteLength;
       if (totalBytes > MAX_TOTAL_BYTES) throw new Error("ZIP toplam boyutu 50 MB sınırını aşıyor.");
-      files.push({ name: safeFileName(index, asset), data });
+      files.push({ name: safeFileName(index, asset, url), data });
     }
 
     const zip = makeZip(files);

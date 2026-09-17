@@ -1,3 +1,4 @@
+import { AIHordeProvider } from "./providers/aihorde";
 import { ComfyUIProvider } from "./providers/comfyui";
 import { GeminiProvider } from "./providers/gemini";
 import { buildAutoFreeCandidates, generateWithFallback, type ProviderConfigMap } from "./router";
@@ -5,6 +6,7 @@ import type { ImageProvider, ProductImageInput } from "./types";
 
 const providers: Record<string, ImageProvider> = {
   comfyui: new ComfyUIProvider(),
+  aihorde: new AIHordeProvider(),
   gemini: new GeminiProvider(),
 };
 
@@ -36,5 +38,9 @@ export async function generateWithConfiguredStrategy(
 
   const provider = getImageProvider(providerId);
   if (!provider) throw new Error("Desteklenen bir AI provider seçilmedi.");
-  return { assets: await provider.generate({ ...input, providerConfig: configs[providerId] || input.providerConfig }), providerId, skipped: [] };
+  return {
+    assets: await provider.generate({ ...input, providerConfig: configs[providerId] || input.providerConfig }),
+    providerId,
+    skipped: [],
+  };
 }

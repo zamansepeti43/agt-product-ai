@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { GENERATION_PRESETS } from "@/lib/ai/presets";
+import CatalogStudio from "./CatalogStudio";
 import type { GeneratedAsset, GenerationJob, ImageJobMode, ProviderConfig } from "@/lib/ai/types";
 
 type ProviderId = "auto-free" | "gemini" | "comfyui" | "aihorde" | "cloudflare" | "openai" | "custom-openai";
@@ -129,6 +130,8 @@ export default function ProductStudio() {
     </section>
 
     <section style={styles.card}><div style={styles.cardHead}><div><p style={styles.kicker}>3 • ÜRET</p><h2 style={styles.h2}>Son ayarlar</h2></div></div><div style={styles.controls}><label>Görsel sayısı<select value={count} onChange={(e) => setCount(Number(e.target.value))}>{[1,2,3,4].map((n) => <option key={n}>{n}</option>)}</select></label><label style={{ flex: 1 }}>Ek talimat<textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={1200} rows={3} placeholder="Örn. ürünü değiştirme, premium doğal ışık, sade arka plan…" /></label></div><button onClick={generate} disabled={!files.length || busy} style={styles.generate}>{busy ? "⏳ Üretiliyor…" : `✨ ${selectedProvider.label} ile görsel üret`}</button>{error && <div style={styles.error}>{error}</div>}{job && <div style={styles.success}>✓ {job.message}</div>}</section>
+
+    <CatalogStudio onError={setError} />
 
     {assets.length > 0 && <section style={styles.card}><div style={styles.cardHead}><div><p style={styles.kicker}>SONUÇ</p><h2 style={styles.h2}>{assets.length} görsel hazır</h2></div><button style={styles.secondary} onClick={exportZip}>⬇ Tümünü ZIP</button></div><div style={styles.results}>{assets.map((asset) => <img key={asset.id} src={previewUrl(asset.url)} alt="Üretilen ürün görseli" style={styles.result} />)}</div></section>}
 

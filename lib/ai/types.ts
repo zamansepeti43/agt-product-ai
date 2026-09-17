@@ -8,6 +8,11 @@ export type ImageJobMode =
 
 export type JobStatus = "queued" | "processing" | "completed" | "failed";
 
+export interface ProviderConfig {
+  apiKey?: string;
+  model?: string;
+}
+
 export interface ProductImageInput {
   sourceImage: Blob;
   fileName?: string;
@@ -17,6 +22,7 @@ export interface ProductImageInput {
   width?: number;
   height?: number;
   count?: number;
+  providerConfig?: ProviderConfig;
 }
 
 export interface GeneratedAsset {

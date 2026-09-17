@@ -7,8 +7,7 @@ import type { ProductCatalogOutput } from "@/lib/catalog/types";
 
 const MAX_FILE_SIZE = 12 * 1024 * 1024;
 const MAX_FILES = 6;
-
-type ProviderId = "gemini" | "comfyui";
+type ProviderId = "auto-free" | "gemini" | "comfyui";
 
 function assetPreviewUrl(url: string) { return url.startsWith("data:image/") ? url : `/api/asset?url=${encodeURIComponent(url)}`; }
 
@@ -18,7 +17,7 @@ export default function Home() {
   const [mode, setMode] = useState<ImageJobMode>("hero");
   const [count, setCount] = useState(1);
   const [prompt, setPrompt] = useState("");
-  const [provider, setProvider] = useState<ProviderId>("gemini");
+  const [provider, setProvider] = useState<ProviderId>("auto-free");
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState("gemini-3.1-flash-image");
   const [job, setJob] = useState<GenerationJob | null>(null);
@@ -39,7 +38,7 @@ export default function Home() {
 
   useEffect(() => { if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined); }, []);
   useEffect(() => { if (!files.length) { setPreview(""); return; } const url = URL.createObjectURL(files[0]); setPreview(url); return () => URL.revokeObjectURL(url); }, [files]);
-  useEffect(() => { const saved = window.localStorage.getItem("agt-ai-provider"); if (saved === "gemini" || saved === "comfyui") setProvider(saved); }, []);
+  useEffect(() => { const saved = window.localStorage.getItem("agt-ai-provider"); if (saved === "auto-free" || saved === "gemini" || saved === "comfyui") setProvider(saved); }, []);
 
   function selectProvider(next: ProviderId) { setProvider(next); window.localStorage.setItem("agt-ai-provider", next); setError(""); }
   function selectFiles(nextFiles: File[]) {
@@ -55,12 +54,15 @@ export default function Home() {
 
   async function startGeneration() {
     if (!files.length || busy || exporting) return;
-    if (provider === "gemini" && !apiKey.trim()) return setError("Gemini API anahtarını bağlaman gerekiyor.");
+    if ((provider === "gemini" || provider === "auto-free") && !apiKey.trim() && provider === "gemini") return setError("Gemini API anahtarını bağlaman gerekiyor.");
     setBusy(true); setError(""); setAssets([]); setJob(null); setCopied("");
     try {
       const body = new FormData();
       if (files.length === 1) body.append("image", files[0]); else files.forEach((f) => body.append("images", f));
-      body.append("mode", mode); body.append("count", String(count)); body.append("prompt", prompt); body.append("provider", provider); body.append("providerApiKey", apiKey); body.append("providerModel", model);
+      body.append("mode", mode); body.append("count", String(count)); body.append("prompt", prompt); body.append("provider", provider);
+      if (apiKey.trim()) body.append("providerApiKey", apiKey.trim());
+      if (model.trim()) body.append("providerModel", model.trim());
+      if (provider === "auto-free") body.append("providerConfigs", JSON.stringify({ gemini: { apiKey: apiKey.trim(), model: model.trim() } }));
       const response = await fetch(files.length === 1 ? "/api/generate" : "/api/batch", { method: "POST", body });
       const data = await response.json(); if (!response.ok) throw new Error(data.error || "Üretim başlatılamadı.");
       setJob(data.job as GenerationJob); setAssets((data.assets as GeneratedAsset[] | undefined) ?? []);
@@ -99,14 +101,18 @@ export default function Home() {
       <section className="workspace"><div className="section-head"><div><p className="eyebrow">ÜRETİM</p><h2>İçerik türünü seç</h2></div><span className="device-note">📱 PWA • 💻 Windows</span></div>
         <div className="modes">{GENERATION_PRESETS.map((preset) => <button type="button" key={preset.id} className={`mode ${mode === preset.id ? "selected" : ""}`} onClick={() => setMode(preset.id)}><span className="mode-icon">{preset.id === "hero" ? "🏪" : preset.id === "white" ? "⚪" : preset.id === "studio" ? "✨" : preset.id === "lifestyle" ? "🏠" : preset.id === "detail" ? "🔍" : "📱"}</span><span><strong>{preset.label}</strong><small>{preset.description}</small></span></button>)}</div>
         <div className="settings-card"><div><span className="eyebrow">SEÇİLİ PRESET</span><strong>{selected.label}</strong><small>{selected.aspectRatio} • Ürün kimliği korunur</small></div><div className="provider-pill">AI PROVIDER • {provider.toUpperCase()}</div></div>
-        <div className="provider-panel"><div><span className="eyebrow">AI MOTORU</span><strong>İstediğin yapay zekâyı bağla</strong><small>API anahtarın yalnızca bu üretim isteğinde sunucuya gönderilir; tarayıcıda kalıcı olarak saklanmaz.</small></div><div className="provider-grid"><button type="button" className={provider === "gemini" ? "selected" : ""} onClick={() => selectProvider("gemini")}>🍌 Gemini<br /><small>Görsel üretim / düzenleme</small></button><button type="button" className={provider === "comfyui" ? "selected" : ""} onClick={() => selectProvider("comfyui")}>🧩 ComfyUI<br /><small>Yerel / Qwen workflow</small></button></div>{provider === "gemini" && <div className="provider-fields"><input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Gemini API Key" autoComplete="off" /><select value={model} onChange={(e) => setModel(e.target.value)}><option value="gemini-3.1-flash-image">Gemini 3.1 Flash Image — Nano Banana 2</option><option value="gemini-3.1-flash-lite-image">Gemini 3.1 Flash Lite Image</option><option value="gemini-3-pro-image">Gemini 3 Pro Image — Nano Banana Pro</option></select></div>}<small className="card-help">API anahtarını uygulamaya gömmüyoruz. Ürün sahibi kendi hesabını kullanır.</small></div>
+        <div className="provider-panel"><div><span className="eyebrow">AI MOTORU</span><strong>İstediğin yapay zekâyı bağla</strong><small>Tek motor seçebilir veya ücretsiz/yerel seçenekleri otomatik sırayla deneyebilirsin.</small></div>
+          <div className="provider-grid"><button type="button" className={provider === "auto-free" ? "selected" : ""} onClick={() => selectProvider("auto-free")}>🆓 Ücretsiz olanı kullan<br /><small>Önce yerel/ücretsiz → kota biterse sonraki</small></button><button type="button" className={provider === "gemini" ? "selected" : ""} onClick={() => selectProvider("gemini")}>🍌 Gemini<br /><small>Görsel üretim / düzenleme</small></button><button type="button" className={provider === "comfyui" ? "selected" : ""} onClick={() => selectProvider("comfyui")}>🧩 ComfyUI<br /><small>Yerel / Qwen workflow</small></button></div>
+          {(provider === "gemini" || provider === "auto-free") && <div className="provider-fields"><input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Gemini API Key (otomatik modda yedek)" autoComplete="off" /><select value={model} onChange={(e) => setModel(e.target.value)}><option value="gemini-3.1-flash-image">Gemini 3.1 Flash Image — Nano Banana 2</option><option value="gemini-3.1-flash-lite-image">Gemini 3.1 Flash Lite Image</option><option value="gemini-3-pro-image">Gemini 3 Pro Image — Nano Banana Pro</option></select></div>}
+          <small className="card-help">Otomatik mod, provider'ın kota/limit hatası verdiğini algıladığında sıradaki bağlı motora geçer. Kalan kotayı provider'lar evrensel olarak bildirmediği için bu sistem hata-temelli fallback kullanır.</small>
+        </div>
         <div className="generation-controls"><label><span>Ürün başına görsel</span><select value={count} onChange={(e) => setCount(Number(e.target.value))}>{[1,2,3,4].map((v) => <option key={v} value={v}>{v} görsel</option>)}</select></label><label className="prompt-field"><span>Ek talimat <small>isteğe bağlı</small></span><textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={1200} placeholder="Örn. ürünü değiştirme, premium doğal ışık, sade arka plan…" rows={3} /><small className="char-count">{prompt.length}/1200</small></label></div>
         {error && <div className="notice error" role="alert">{error}</div>}{job && <div className="notice success"><strong>✓ {job.message}</strong><small>Job: {job.id}</small></div>}
         {assets.length > 0 && <div className="results"><div className="results-head"><div><span className="eyebrow">SONUÇ</span><h2>{assets.length} görsel hazır</h2></div><button type="button" className="export-button" onClick={exportZip} disabled={exporting || busy}>{exporting ? "ZIP hazırlanıyor…" : "⬇ Tümünü ZIP indir"}</button></div><div className="asset-grid">{assets.map((asset) => { const previewUrl = assetPreviewUrl(asset.url); return <a className="asset-card" key={asset.id} href={previewUrl} target="_blank" rel="noreferrer"><img src={previewUrl} alt="Üretilen ürün görseli" loading="lazy" /><span>{asset.mode} • {asset.width}×{asset.height}</span></a>; })}</div></div>}
         <div className="catalog-card"><div className="results-head"><div><span className="eyebrow">KATALOG / SEO</span><h2>Satış metnini hazırla</h2><p className="card-help">Ürün bilgilerini gir; başlık, açıklama, etiket ve SEO anahtar kelimelerini tek seferde çıkar.</p></div></div><div className="catalog-grid"><input value={catalogName} onChange={(e) => setCatalogName(e.target.value)} placeholder="Ürün adı *" /><input value={catalogCategory} onChange={(e) => setCatalogCategory(e.target.value)} placeholder="Kategori *" /><input value={catalogBrand} onChange={(e) => setCatalogBrand(e.target.value)} placeholder="Marka (opsiyonel)" /><input value={catalogKeywords} onChange={(e) => setCatalogKeywords(e.target.value)} placeholder="Anahtar kelimeler, virgülle ayır" /><select value={catalogMarketplace} onChange={(e) => setCatalogMarketplace(e.target.value as typeof catalogMarketplace)}><option value="etsy">Etsy</option><option value="trendyol">Trendyol</option><option value="hepsiburada">Hepsiburada</option><option value="amazon">Amazon</option><option value="generic">Genel mağaza</option></select><select value={catalogLanguage} onChange={(e) => setCatalogLanguage(e.target.value as typeof catalogLanguage)}><option value="tr">Türkçe</option><option value="en">English</option></select></div><button type="button" className="export-button catalog-action" onClick={generateCatalog} disabled={catalogBusy}>{catalogBusy ? "Hazırlanıyor…" : "Katalog metnini oluştur →"}</button>{catalog && <div className="catalog-result"><div className="copy-row"><strong>{catalog.title}</strong><button type="button" onClick={() => copyText("title", catalog.title)}>{copied === "title" ? "✓ Kopyalandı" : "Kopyala"}</button></div><p>{catalog.shortDescription}</p><div className="copy-row"><b>Açıklama</b><button type="button" onClick={() => copyText("description", catalog.description)}>{copied === "description" ? "✓ Kopyalandı" : "Kopyala"}</button></div><p>{catalog.description}</p><div className="catalog-line"><b>Etiketler:</b> {catalog.tags.join(" • ")}</div><div className="catalog-line"><b>SEO:</b> {catalog.seoKeywords.join(", ")}</div><button type="button" className="copy-all" onClick={() => copyText("all", `Başlık: ${catalog.title}\n\nKısa açıklama: ${catalog.shortDescription}\n\nAçıklama: ${catalog.description}\n\nEtiketler: ${catalog.tags.join(", ")}\n\nSEO: ${catalog.seoKeywords.join(", ")}`)}>{copied === "all" ? "✓ Tüm katalog metni kopyalandı" : "Katalog paketini kopyala"}</button></div>}</div>
-        <div className="action-row"><div><strong>{files.length ? `${files.length} fotoğraf hazır` : "Önce ürün fotoğrafını seç"}</strong><span className="muted"> • {selected.label} • {provider.toUpperCase()} • ürün başına {count} çıktı</span></div><button type="button" className="generate" disabled={!files.length || busy || exporting} onClick={startGeneration}>{busy ? "AI işliyor…" : files.length > 1 ? "Toplu Üretimi Başlat →" : "Üretmeye Başla →"}</button></div>
+        <div className="action-row"><div><strong>{files.length ? `${files.length} fotoğraf hazır` : "Önce ürün fotoğrafını seç"}</strong><span className="muted"> • {selected.label} • ürün başına {count} çıktı</span></div><button type="button" className="generate" disabled={!files.length || busy || exporting} onClick={startGeneration}>{busy ? "AI işliyor…" : files.length > 1 ? "Toplu Üretimi Başlat →" : "Üretmeye Başla →"}</button></div>
       </section>
-      <section className="pipeline"><div><span>01</span><strong>Fotoğraf</strong><small>Tekli / katalog</small></div><i>→</i><div><span>02</span><strong>Hazırla</strong><small>Ürün + preset</small></div><i>→</i><div><span>03</span><strong>AI İşleme</strong><small>Seçilen motor</small></div><i>→</i><div><span>04</span><strong>Satış paketi</strong><small>Katalog / SEO / ZIP</small></div></section>
+      <section className="pipeline"><div><span>01</span><strong>Fotoğraf</strong><small>Tekli / katalog</small></div><i>→</i><div><span>02</span><strong>Hazırla</strong><small>Ürün + preset</small></div><i>→</i><div><span>03</span><strong>AI İşleme</strong><small>Auto / Gemini / Qwen</small></div><i>→</i><div><span>04</span><strong>Satış paketi</strong><small>Katalog / SEO / ZIP</small></div></section>
     </main>
   );
 }

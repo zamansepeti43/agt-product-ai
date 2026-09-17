@@ -4,7 +4,7 @@
   "version": "0.5.0",
   "identifier": "com.agtstudio.productai",
   "build": {
-    "frontendDist": "../out",
+    "frontendDist": "../desktop-dist",
     "devUrl": "http://localhost:3000"
   },
   "app": {

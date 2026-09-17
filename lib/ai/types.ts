@@ -6,6 +6,8 @@ export type ImageJobMode =
   | "detail"
   | "social";
 
+export type JobStatus = "queued" | "processing" | "completed" | "failed";
+
 export interface ProductImageInput {
   sourceImageUrl: string;
   mode: ImageJobMode;
@@ -25,4 +27,20 @@ export interface GeneratedAsset {
 export interface ImageProvider {
   readonly id: string;
   generate(input: ProductImageInput): Promise<GeneratedAsset[]>;
+}
+
+export interface GenerationRequest {
+  mode: ImageJobMode;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
+export interface GenerationJob {
+  id: string;
+  status: JobStatus;
+  mode: ImageJobMode;
+  provider: string;
+  createdAt: string;
+  message: string;
 }

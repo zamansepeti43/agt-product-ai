@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -e
+if command -v gradle >/dev/null 2>&1; then
+  exec gradle "$@"
+fi
+echo "Gradle is required. Install Gradle 8.10.2+ and run: gradle assembleRelease -PappUrl=https://agt-product-ai.vercel.app" >&2
+exit 1

@@ -15,6 +15,7 @@ export default function Home() {
   const [job, setJob] = useState<GenerationJob | null>(null);
   const [assets, setAssets] = useState<GeneratedAsset[]>([]);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
 
   const selected = useMemo(
@@ -53,7 +54,7 @@ export default function Home() {
   }
 
   async function startGeneration() {
-    if (!file || busy) return;
+    if (!file || busy || exporting) return;
     setBusy(true);
     setError("");
     setAssets([]);
@@ -72,6 +73,36 @@ export default function Home() {
       setError(err instanceof Error ? err.message : "Beklenmeyen bir hata oluştu.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function exportZip() {
+    if (!assets.length || exporting || busy) return;
+    setExporting(true);
+    setError("");
+    try {
+      const response = await fetch("/api/export/zip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assets }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "ZIP oluşturulamadı.");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "AGT-Product-AI-export.zip";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ZIP dışa aktarma başarısız oldu.");
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -129,7 +160,10 @@ export default function Home() {
 
         {assets.length > 0 && (
           <div className="results">
-            <div className="results-head"><div><span className="eyebrow">SONUÇ</span><h2>{assets.length} görsel hazır</h2></div><span className="device-note">Sağ tık / basılı tut → kaydet</span></div>
+            <div className="results-head">
+              <div><span className="eyebrow">SONUÇ</span><h2>{assets.length} görsel hazır</h2></div>
+              <button className="export-button" onClick={exportZip} disabled={exporting || busy}>{exporting ? "ZIP hazırlanıyor…" : "⬇ Tümünü ZIP indir"}</button>
+            </div>
             <div className="asset-grid">
               {assets.map((asset) => (
                 <a className="asset-card" key={asset.id} href={asset.url} target="_blank" rel="noreferrer">
@@ -143,7 +177,7 @@ export default function Home() {
 
         <div className="action-row">
           <div><strong>{file ? "Fotoğraf hazır" : "Önce ürün fotoğrafını seç"}</strong><span className="muted"> • {selected.label} • {count} çıktı</span></div>
-          <button className="generate" disabled={!file || busy} onClick={startGeneration}>{busy ? "Üretim çalışıyor…" : "Üretmeye Başla →"}</button>
+          <button className="generate" disabled={!file || busy || exporting} onClick={startGeneration}>{busy ? "Üretim çalışıyor…" : "Üretmeye Başla →"}</button>
         </div>
       </section>
 

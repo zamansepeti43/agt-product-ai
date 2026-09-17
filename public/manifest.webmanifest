@@ -1,0 +1,10 @@
+{
+  "name": "AGT Product AI",
+  "short_name": "AGT Product AI",
+  "description": "AI product studio for e-commerce content creation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0c10",
+  "theme_color": "#0b0c10",
+  "lang": "tr"
+}

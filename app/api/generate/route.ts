@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getImageProvider, configuredImageProviderId } from "@/lib/ai/provider";
 import { getPreset } from "@/lib/ai/presets";
-import type { GenerationJob, ImageJobMode } from "@/lib/ai/types";
+import type { GenerationJob, ImageJobMode, ProviderConfig } from "@/lib/ai/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -10,6 +10,14 @@ export const maxDuration = 300;
 const MAX_FILE_SIZE = 12 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MODES = new Set<ImageJobMode>(["hero", "white", "studio", "lifestyle", "detail", "social"]);
+const PROVIDERS = new Set(["gemini", "comfyui"]);
+
+function readProviderConfig(formData: FormData) {
+  const provider = String(formData.get("provider") || process.env.IMAGE_PROVIDER || "").trim().toLowerCase();
+  const apiKey = String(formData.get("providerApiKey") || "").trim().slice(0, 500);
+  const model = String(formData.get("providerModel") || "").trim().slice(0, 160);
+  return { provider, config: { apiKey, model } satisfies ProviderConfig };
+}
 
 export async function POST(request: Request) {
   try {
@@ -18,24 +26,26 @@ export async function POST(request: Request) {
     const rawMode = String(formData.get("mode") ?? "hero");
     const rawCount = Number(formData.get("count") ?? 1);
     const customPrompt = String(formData.get("prompt") ?? "").trim().slice(0, 1200);
+    const { provider: providerId, config: providerConfig } = readProviderConfig(formData);
 
     if (!(file instanceof File)) return NextResponse.json({ error: "Ürün görseli gerekli." }, { status: 400 });
     if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ error: "Sadece JPG, PNG veya WEBP kabul edilir." }, { status: 415 });
     if (file.size === 0 || file.size > MAX_FILE_SIZE) return NextResponse.json({ error: "Görsel 12 MB'dan küçük olmalı." }, { status: 413 });
     if (!MODES.has(rawMode as ImageJobMode)) return NextResponse.json({ error: "Geçersiz üretim modu." }, { status: 400 });
     if (!Number.isInteger(rawCount) || rawCount < 1 || rawCount > 4) return NextResponse.json({ error: "Görsel sayısı 1 ile 4 arasında olmalı." }, { status: 400 });
+    if (providerId && !PROVIDERS.has(providerId)) return NextResponse.json({ error: "Desteklenmeyen AI provider." }, { status: 400 });
 
     const mode = rawMode as ImageJobMode;
     const preset = getPreset(mode);
-    const providerId = configuredImageProviderId();
-    const provider = getImageProvider();
+    const effectiveProviderId = providerId || configuredImageProviderId();
+    const provider = getImageProvider(effectiveProviderId);
     const prompt = customPrompt ? `${preset.prompt}\n\nEk kullanıcı talimatı: ${customPrompt}` : preset.prompt;
 
     const job: GenerationJob = {
       id: randomUUID(),
       status: provider ? "processing" : "queued",
       mode,
-      provider: providerId,
+      provider: effectiveProviderId,
       createdAt: new Date().toISOString(),
       message: provider ? `${preset.label} üretimi başlatıldı.` : "Görsel doğrulandı. AI provider bağlantısı bekleniyor.",
     };
@@ -53,6 +63,7 @@ export async function POST(request: Request) {
       count: rawCount,
       width: 1024,
       height: mode === "studio" || mode === "lifestyle" || mode === "detail" || mode === "social" ? 1280 : 1024,
+      providerConfig,
     });
 
     return NextResponse.json({

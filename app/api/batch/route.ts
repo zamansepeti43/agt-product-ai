@@ -12,14 +12,11 @@ const MAX_FILE_SIZE = 12 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 48 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MODES = new Set<ImageJobMode>(["hero", "white", "studio", "lifestyle", "detail", "social"]);
-const PROVIDERS = new Set(["gemini", "comfyui", "auto-free"]);
+const PROVIDERS = new Set(["gemini", "comfyui", "aihorde", "custom-openai", "auto-free"]);
 
 function readProviderConfig(formData: FormData) {
   const provider = String(formData.get("provider") || process.env.IMAGE_PROVIDER || "").trim().toLowerCase();
-  const fallback: ProviderConfig = {
-    apiKey: String(formData.get("providerApiKey") || "").trim().slice(0, 500),
-    model: String(formData.get("providerModel") || "").trim().slice(0, 160),
-  };
+  const fallback: ProviderConfig = { apiKey: String(formData.get("providerApiKey") || "").trim().slice(0, 500), model: String(formData.get("providerModel") || "").trim().slice(0, 160), baseUrl: String(formData.get("providerBaseUrl") || "").trim().slice(0, 500) };
   let configs: ProviderConfigMap = provider && provider !== "auto-free" ? { [provider]: fallback } : {};
   const rawConfigs = String(formData.get("providerConfigs") || "").trim();
   if (rawConfigs) {
@@ -27,7 +24,7 @@ function readProviderConfig(formData: FormData) {
       const parsed = JSON.parse(rawConfigs) as Record<string, unknown>;
       configs = Object.fromEntries(Object.entries(parsed).map(([id, value]) => {
         const config = value && typeof value === "object" ? value as Record<string, unknown> : {};
-        return [id, { apiKey: typeof config.apiKey === "string" ? config.apiKey.slice(0, 500) : undefined, model: typeof config.model === "string" ? config.model.slice(0, 160) : undefined } satisfies ProviderConfig];
+        return [id, { apiKey: typeof config.apiKey === "string" ? config.apiKey.slice(0, 500) : undefined, model: typeof config.model === "string" ? config.model.slice(0, 160) : undefined, baseUrl: typeof config.baseUrl === "string" ? config.baseUrl.slice(0, 500) : undefined } satisfies ProviderConfig];
       }));
     } catch { throw new Error("AI provider ayarları geçerli JSON değil."); }
   }
@@ -49,11 +46,7 @@ export async function POST(request: Request) {
     if (providerId && !PROVIDERS.has(providerId)) return NextResponse.json({ error: "Desteklenmeyen AI provider." }, { status: 400 });
     const totalSize = files.reduce((sum, file) => sum + file.size, 0);
     if (totalSize > MAX_TOTAL_SIZE) return NextResponse.json({ error: "Toplam yükleme boyutu 48 MB sınırını aşıyor." }, { status: 413 });
-    for (const file of files) {
-      if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ error: "Sadece JPG, PNG veya WEBP kabul edilir." }, { status: 415 });
-      if (file.size === 0 || file.size > MAX_FILE_SIZE) return NextResponse.json({ error: "Her görsel 12 MB'dan küçük olmalı." }, { status: 413 });
-    }
-
+    for (const file of files) { if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ error: "Sadece JPG, PNG veya WEBP kabul edilir." }, { status: 415 }); if (file.size === 0 || file.size > MAX_FILE_SIZE) return NextResponse.json({ error: "Her görsel 12 MB'dan küçük olmalı." }, { status: 413 }); }
     const mode = rawMode as ImageJobMode;
     const preset = getPreset(mode);
     const effectiveProviderId = providerId || configuredImageProviderId();
@@ -61,24 +54,14 @@ export async function POST(request: Request) {
     const prompt = customPrompt ? `${preset.prompt}\n\nEk kullanıcı talimatı: ${customPrompt}` : preset.prompt;
     const job: GenerationJob = { id: randomUUID(), status: hasStrategy ? "processing" : "queued", mode, provider: effectiveProviderId || "not-configured", createdAt: new Date().toISOString(), message: hasStrategy ? `${files.length} ürün için toplu üretim başlatıldı.` : "Görseller doğrulandı. AI provider bağlantısı bekleniyor." };
     if (!hasStrategy) return NextResponse.json({ job, input: { fileCount: files.length, count: rawCount, preset } }, { status: 202 });
-
     const assets: GeneratedAsset[] = [];
     let usedProvider = effectiveProviderId;
     const skipped = new Set<string>();
-    const width = 1024;
-    const height = ["studio", "lifestyle", "detail", "social"].includes(mode) ? 1280 : 1024;
     for (const file of files) {
-      const result = await generateWithConfiguredStrategy(effectiveProviderId, { sourceImage: file, fileName: file.name, mimeType: file.type, mode, prompt, count: rawCount, width, height }, configs);
-      assets.push(...result.assets);
-      usedProvider = result.providerId;
-      result.skipped.forEach((id) => skipped.add(id));
+      const result = await generateWithConfiguredStrategy(effectiveProviderId, { sourceImage: file, fileName: file.name, mimeType: file.type, mode, prompt, count: rawCount, width: 1024, height: ["studio", "lifestyle", "detail", "social"].includes(mode) ? 1280 : 1024 }, configs);
+      assets.push(...result.assets); usedProvider = result.providerId; result.skipped.forEach((id) => skipped.add(id));
     }
-    const message = effectiveProviderId === "auto-free"
-      ? `${assets.length} görsel üretildi (${files.length} ürün). Kullanılan motor: ${usedProvider}${skipped.size ? ` • Kota/limit nedeniyle atlanan: ${Array.from(skipped).join(", ")}` : ""}.`
-      : `${assets.length} görsel üretildi (${files.length} ürün).`;
+    const message = effectiveProviderId === "auto-free" ? `${assets.length} görsel üretildi (${files.length} ürün). Kullanılan motor: ${usedProvider}${skipped.size ? ` • Atlanan: ${Array.from(skipped).join(", ")}` : ""}.` : `${assets.length} görsel üretildi (${files.length} ürün).`;
     return NextResponse.json({ job: { ...job, provider: usedProvider, status: "completed", message }, assets, input: { fileCount: files.length, count: rawCount, preset } });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Toplu üretim sırasında bilinmeyen bir hata oluştu.";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Toplu üretim sırasında bilinmeyen bir hata oluştu." }, { status: 500 }); }
 }

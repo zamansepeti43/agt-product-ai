@@ -30,7 +30,7 @@ export class GeminiProvider {
   readonly id = "gemini";
 
   async generate(input: ProductImageInput): Promise<GeneratedAsset[]> {
-    const apiKey = input.providerConfig?.apiKey || process.env.GEMINI_API_KEY;
+    const apiKey = input.providerConfig?.apiKey?.trim();
     if (!apiKey) throw new Error("Gemini API anahtarı gerekli. AI Motorları bölümünden anahtarını bağla.");
 
     const model = input.providerConfig?.model || process.env.GEMINI_MODEL || DEFAULT_MODEL;

@@ -26,7 +26,7 @@ function variantInstruction(mode: ProductImageInput["mode"], index: number) {
     hero: [
       "Variation: pure white marketplace background, soft contact shadow.",
       "Variation: premium neutral studio gradient, subtle floor reflection.",
-      "Variation: clean bright tabletop lifestyle environment with tasteful blurred decor and absolutely no people.",
+      "Variation: clean bright modern-home tabletop with tasteful blurred decor and no people.",
       "Variation: editorial product close-up with a soft neutral background and strong product focus.",
     ],
     white: [
@@ -43,8 +43,8 @@ function variantInstruction(mode: ProductImageInput["mode"], index: number) {
     ],
     lifestyle: [
       "Variation: bright clean kitchen tabletop, no people.",
-      "Variation: minimal nursery shelf, no people.",
-      "Variation: warm family-home tabletop, no people.",
+      "Variation: minimal modern home shelf, no people.",
+      "Variation: warm neutral tabletop, no people.",
       "Variation: airy modern interior tabletop, no people.",
     ],
     detail: [
@@ -63,8 +63,9 @@ function variantInstruction(mode: ProductImageInput["mode"], index: number) {
   return variants[mode]?.[index % 4] || variants.hero[index % 4];
 }
 
+// AI Horde accepts the classic Stable Diffusion prompt separator: positive ### negative.
 const NEGATIVE_PROMPT =
-  "people, person, human, child, baby, infant, adult, face, hands, fingers, arms, legs, body, skin, human anatomy, nudity, lingerie, underwear, sexual content, erotic, intimate, suggestive pose, extra products, duplicate product, deformed product, melted product, altered geometry, wrong colors, text, captions, watermark, logo invention, labels invention, blurry, low quality";
+  "people, humans, hands, fingers, faces, arms, legs, body parts, skin, human figure, duplicate product, extra product, deformed product, melted product, altered geometry, wrong colors, text, captions, watermark, invented logo, invented label, blurry, low quality";
 
 async function normalizeImage(raw: string) {
   if (raw.startsWith("data:image/")) return raw;
@@ -104,7 +105,7 @@ export class AIHordeProvider implements ImageProvider {
     const basePrompt = [
       input.prompt || "Create a professional commercial product image.",
       "This is a normal SFW commercial product-photography task.",
-      "The source contains a physical product only; do not depict or imply human use.",
+      "The source contains a physical product; do not depict human use.",
       "Keep the exact source product as the single hero subject.",
       "Photorealistic, clean, realistic materials, accurate colors, accurate proportions, premium e-commerce photography.",
       "No people or body parts in the scene.",
@@ -114,13 +115,11 @@ export class AIHordeProvider implements ImageProvider {
     let attempts = 0;
 
     // Request one image at a time so the app can discard AI Horde safety-censored
-    // generations and replace them with another variation instead of showing a
-    // black "CENSORED" tile to the customer.
+    // generations and replace them with another clean variation.
     while (assets.length < count && attempts < count * MAX_ATTEMPTS_PER_IMAGE) {
       const imageIndex = assets.length;
       attempts += 1;
-
-      const prompt = `${basePrompt} ${variantInstruction(input.mode, imageIndex)}`;
+      const prompt = `${basePrompt} ${variantInstruction(input.mode, imageIndex)} ### ${NEGATIVE_PROMPT}`;
 
       const response = await fetch(`${BASE_URL}/async`, {
         method: "POST",
@@ -136,12 +135,10 @@ export class AIHordeProvider implements ImageProvider {
             steps: 30,
             n: 1,
             cfg_scale: 7.5,
-            denoising_strength: 0.55,
+            denoising_strength: 0.65,
             sampler_name: "k_euler_a",
           },
           nsfw: false,
-          // Keep Horde's SFW safety censor enabled. If a worker still flags a
-          // result, we skip that result and request another clean variation.
           censor_nsfw: true,
           r2: true,
           shared: false,
@@ -182,20 +179,12 @@ export class AIHordeProvider implements ImageProvider {
 
       const generations = Array.isArray(finishedStatus.generations) ? finishedStatus.generations : [];
       const generation = generations[0];
-      if (!generation?.img) {
-        // A request can complete without a usable image after a safety/worker
-        // event. Retry with the next commercial variation.
-        continue;
-      }
+      if (!generation?.img) continue;
 
-      if (generation.censored === true || generation.state === "censored") {
-        continue;
-      }
+      if (generation.censored === true || generation.state === "censored") continue;
 
       const metadata = Array.isArray(generation.gen_metadata) ? generation.gen_metadata : [];
-      if (metadata.some((item: any) => item?.type === "censorship")) {
-        continue;
-      }
+      if (metadata.some((item: any) => item?.type === "censorship")) continue;
 
       const url = await normalizeImage(String(generation.img));
       assets.push({
@@ -210,11 +199,9 @@ export class AIHordeProvider implements ImageProvider {
     if (!assets.length) {
       throw new Error("AI Horde güvenli bir ürün görseli üretemedi. Farklı bir üretim denemesi yap.");
     }
-
     if (assets.length < count) {
       throw new Error(`AI Horde ${assets.length}/${count} temiz ürün görseli üretebildi. Tekrar deneyebilirsin.`);
     }
-
     return assets;
   }
 }

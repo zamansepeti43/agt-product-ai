@@ -39,6 +39,7 @@ export default function ProductStudio() {
   const [finder, setFinder] = useState<any[]>([]);
   const [finderOpen, setFinderOpen] = useState(false);
   const [pollinationsConnected, setPollinationsConnected] = useState(false);
+  const [providerConnected, setProviderConnected] = useState(false);
 
   const selected = useMemo(() => GENERATION_PRESETS.find((p) => p.id === mode) || GENERATION_PRESETS[0], [mode]);
   const selectedProvider = providers.find((p) => p.id === provider) || providers[0];
@@ -51,7 +52,17 @@ export default function ProductStudio() {
       window.history.replaceState({}, "", window.location.pathname);
       setError("");
     }
-  }, []);
+  }, [])
+  useEffect(() => {
+    if (!["gemini", "openai", "custom-openai", "cloudflare"].includes(provider)) {
+      setProviderConnected(false);
+      return;
+    }
+    fetch("/api/provider-config?provider=" + encodeURIComponent(provider), { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : { connected: false })
+      .then((data) => setProviderConnected(Boolean(data.connected)))
+      .catch(() => setProviderConnected(false));
+  }, [provider]);;
 
   function selectProvider(id: ProviderId) {
     setProvider(id);
@@ -117,16 +128,36 @@ export default function ProductStudio() {
     }
   }
 
+
+  async function connectProviderCredentials() {
+    if (!["gemini", "openai", "custom-openai", "cloudflare", "aihorde"].includes(provider)) return true;
+    if (provider === "aihorde" && !apiKey.trim()) return true;
+    if (!apiKey.trim()) {
+      setError("Önce bu provider için API anahtarını gir.");
+      return false;
+    }
+    const response = await fetch("/api/provider-config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, apiKey: apiKey.trim(), accountId: accountId.trim() }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "API anahtarı güvenli oturuma kaydedilemedi.");
+    setProviderConnected(true);
+    return true;
+  }
+
   async function generate() {
     if (!files.length || busy) return;
     if (files.length !== 1) {
       setError("Şimdilik tek ürün görseli seçmelisin.");
       return;
     }
-    if (["gemini", "openai", "custom-openai"].includes(provider) && !apiKey.trim()) return setError("Bu provider için API anahtarı gerekli.");
+    if (["gemini", "openai", "custom-openai", "cloudflare"].includes(provider) && !providerConnected && !apiKey.trim()) return setError("Önce bu provider için API anahtarını bağla.");
     if (provider === "pollinations" && !pollinationsConnected) return setError("Önce Pollinations bağlantısını kurmalısın.");
-    if (provider === "cloudflare" && (!apiKey.trim() || !accountId.trim())) return setError("Cloudflare için Account ID ve API Token gerekli.");
+    if (provider === "cloudflare" && !accountId.trim() && !providerConnected) return setError("Cloudflare Account ID gerekli.");
     if (["openai", "custom-openai"].includes(provider) && !model.trim()) return setError("Model adı gerekli.");
+    if (!await connectProviderCredentials()) return;
     if (provider === "custom-openai" && !baseUrl.trim()) return setError("Özel API Base URL gerekli.");
 
     setBusy(true);
@@ -149,9 +180,9 @@ export default function ProductStudio() {
       const config: Record<string, ProviderConfig> = {};
       if ((provider === "auto-free" || provider === "aihorde") && apiKey.trim()) config.aihorde = { apiKey: apiKey.trim() };
       if (provider === "pollinations") config.pollinations = { model: model.trim() };
-      if (provider === "openai") config.openai = { apiKey: apiKey.trim(), model: model.trim(), baseUrl: baseUrl.trim() };
-      if (provider === "cloudflare") config.cloudflare = { apiKey: apiKey.trim(), model: model.trim(), accountId: accountId.trim() };
-      if (provider === "custom-openai") config["custom-openai"] = { apiKey: apiKey.trim(), model: model.trim(), baseUrl: baseUrl.trim() };
+      if (provider === "openai") config.openai = { model: model.trim(), baseUrl: baseUrl.trim() };
+      if (provider === "cloudflare") config.cloudflare = { model: model.trim(), accountId: accountId.trim() };
+      if (provider === "custom-openai") config["custom-openai"] = { model: model.trim(), baseUrl: baseUrl.trim() };
       if (Object.keys(config).length) body.append("providerConfigs", JSON.stringify(config));
 
       // Free AI Horde must not keep a Vercel function open while community
@@ -173,7 +204,7 @@ export default function ProductStudio() {
           const statusResponse = await fetch("/api/aihorde/status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: jobId, apiKey: apiKey.trim() }),
+            body: JSON.stringify({ id: jobId }),
           });
           const status = await statusResponse.json();
           if (!statusResponse.ok) throw new Error(status.error || "AI Horde durumu alınamadı.");
@@ -257,7 +288,7 @@ export default function ProductStudio() {
     </section>
 
     <section className="studio-section ai-section">
-      <div className="section-title-row ai-title"><div><p className="studio-kicker">2 · AI MOTORU</p><h2>İstediğin yapay zekâyı bağla <button className="mini-help" aria-label="Bilgi">?</button></h2><p>Anahtarlar tarayıcıda saklanmaz; istek sırasında sunucuya iletilir.</p></div><button className="outline-button" onClick={openFinder}>🔎 API Finder <span>→</span></button></div>
+      <div className="section-title-row ai-title"><div><p className="studio-kicker">2 · AI MOTORU</p><h2>İstediğin yapay zekâyı bağla <button className="mini-help" aria-label="Bilgi">?</button></h2><p>Secret key'ler client bundle veya localStorage'a girmez; güvenli HttpOnly oturumda tutulur.</p></div><button className="outline-button" onClick={openFinder}>🔎 API Finder <span>→</span></button></div>
       <select className="provider-mobile-select" value={provider} onChange={(e) => selectProvider(e.target.value as ProviderId)} aria-label="AI motoru seç">{providers.map((p) => <option key={p.id} value={p.id}>{p.icon} {p.label} — {p.note}</option>)}</select>
       <div id="provider-options" className="provider-options">{providers.map((p) => <button key={p.id} onClick={() => selectProvider(p.id)} className={`provider-option ${provider === p.id ? "is-selected" : ""}`}><strong>{p.icon} {p.label}</strong><small>{p.note}</small></button>)}</div>
       {provider !== "comfyui" && <div className="provider-fields">

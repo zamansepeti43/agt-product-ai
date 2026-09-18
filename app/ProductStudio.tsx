@@ -178,3 +178,4 @@ export default function ProductStudio() {
 
     {finderOpen && <div className="finder-overlay"><div className="finder-modal"><div className="section-title-row"><div><p className="studio-kicker">API FINDER</p><h2>Bağlanabilir sağlayıcılar</h2></div><button className="outline-button" onClick={() => setFinderOpen(false)}>Kapat</button></div><div className="provider-options">{finder.map((p) => <button key={p.id} className="provider-option" onClick={() => { if (providers.some((x) => x.id === p.id)) selectProvider(p.id as ProviderId); setFinderOpen(false); }}><strong>{p.name}</strong><small>{p.note}</small></button>)}</div></div></div>}
   </main>;
+}

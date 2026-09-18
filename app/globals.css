@@ -128,3 +128,38 @@ h2 { margin:0; font-size:26px; letter-spacing:-.03em; }
 
 .upload-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
 .studio-upload{position:relative;}
+
+
+/* AGT Product AI — mobile-first refinement */
+@media (max-width: 700px) {
+  .studio-page{padding:10px 12px 32px;overflow-x:hidden}
+  .studio-topbar{padding:5px 2px 12px;position:sticky;top:0;z-index:20;background:rgba(8,10,16,.92);backdrop-filter:blur(14px)}
+  .studio-brand{font-size:20px;letter-spacing:-.8px}.studio-brand small{font-size:8px;letter-spacing:1.5px}
+  .studio-top-actions{gap:7px}.icon-button,.avatar-button{width:34px;height:34px}
+  .studio-hero{display:flex;flex-direction:column;gap:18px;padding:30px 0 20px;align-items:stretch}
+  .hero-copy h1{font-size:clamp(38px,11vw,52px);letter-spacing:-2.8px;line-height:.94}
+  .hero-copy>p:last-child{font-size:13px;line-height:1.55;margin-top:14px}
+  .studio-upload{min-height:205px;border-radius:18px;padding:18px}.upload-icon{width:48px;height:48px;font-size:27px;border-radius:15px;margin-bottom:10px}.studio-upload strong{font-size:15px}.studio-upload small{font-size:10px}.upload-cta{margin-top:11px;padding:8px 14px;font-size:11px}
+  .studio-section{padding:15px;border-radius:16px;margin-bottom:10px;box-shadow:none}
+  .section-title-row{align-items:flex-start;margin-bottom:12px;gap:8px}.section-title-row h2{font-size:19px}.section-meta{font-size:9px;text-align:right}
+  .content-modes{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.content-mode{min-height:92px;padding:10px;border-radius:12px}.mode-emoji{font-size:20px}.content-mode b{font-size:11px}.content-mode small{font-size:9px}
+  .ai-title{display:block}.ai-title .outline-button{margin-top:10px;width:100%;height:40px}.ai-title>div>p:last-child{font-size:10px}
+  .provider-mobile-select{display:block!important;width:100%;height:44px;margin-bottom:9px;border:1px solid #343b4d;border-radius:12px;background:#111620;color:#f5f7fb;padding:0 11px}
+  .provider-options{display:none!important}
+  .provider-fields{grid-template-columns:1fr;gap:8px;margin-top:8px}.provider-fields input{min-height:44px;font-size:13px}
+  .provider-help{font-size:10px;padding:9px 10px;margin-top:8px}
+  .pollinations-connect-box{width:100%}.pollinations-connect-box .outline-button{width:100%;min-height:44px}
+  .production-grid{grid-template-columns:1fr 1fr;gap:7px}.production-grid label{font-size:10px}.production-grid select{min-height:43px;font-size:13px}
+  .prompt-box{margin-top:8px;padding:10px;gap:9px}.prompt-box>span{width:31px;height:31px}.prompt-box b{font-size:11px}.prompt-box textarea{font-size:13px;min-height:50px}
+  .generate-button{margin-top:9px;min-height:50px;padding:13px 12px;border-radius:13px;font-size:14px;position:sticky;bottom:10px;z-index:10}
+  .studio-notice{font-size:10px;padding:9px 10px}
+  .catalog-grid{grid-template-columns:1fr;gap:7px}.catalog-grid input,.catalog-grid select{min-height:43px;font-size:13px}
+  .catalog-details summary{font-size:11px}.catalog-result{font-size:11px;padding:11px}
+  .results-section .section-title-row{align-items:center}.results-section .outline-button{width:auto;padding:8px 10px;font-size:10px}
+  .asset-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.asset-item{border-radius:11px}.asset-item button{padding:10px 7px;font-size:10px;min-height:36px}
+  .finder-overlay{padding:10px;align-items:flex-end}.finder-modal{width:100%;max-height:82vh;border-radius:18px 18px 0 0;padding:14px}.finder-modal .provider-options{display:grid!important;grid-template-columns:1fr;gap:7px}.finder-modal .provider-option{min-height:60px}
+}
+@media (max-width: 380px){
+  .studio-page{padding-left:9px;padding-right:9px}.studio-section{padding:12px}.hero-copy h1{font-size:37px}.content-modes{gap:6px}.content-mode{min-height:88px}.section-title-row h2{font-size:18px}.production-grid{grid-template-columns:1fr}
+}
+@media (min-width: 701px){.provider-mobile-select{display:none}}

@@ -163,3 +163,11 @@ h2 { margin:0; font-size:26px; letter-spacing:-.03em; }
   .studio-page{padding-left:9px;padding-right:9px}.studio-section{padding:12px}.hero-copy h1{font-size:37px}.content-modes{gap:6px}.content-mode{min-height:88px}.section-title-row h2{font-size:18px}.production-grid{grid-template-columns:1fr}
 }
 @media (min-width: 701px){.provider-mobile-select{display:none}}
+
+
+/* AGT Product AI — mobile provider selector hard lock */
+@media (max-width: 700px) {
+  .ai-section .provider-options { display:none !important; visibility:hidden !important; height:0 !important; max-height:0 !important; overflow:hidden !important; margin:0 !important; padding:0 !important; }
+  .ai-section .provider-mobile-select { display:block !important; visibility:visible !important; width:100% !important; min-height:46px !important; height:46px !important; margin:0 0 10px !important; padding:0 12px !important; border:1px solid #3b4560 !important; border-radius:13px !important; background:#121722 !important; color:#f5f7fb !important; font-size:13px !important; font-weight:700 !important; }
+  .ai-section .provider-mobile-select option { background:#11151d; color:#f5f7fb; }
+}

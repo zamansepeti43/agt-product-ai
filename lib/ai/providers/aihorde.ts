@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import type { GeneratedAsset, ImageProvider, ProductImageInput } from "../types";
 
 const BASE_URL = "https://aihorde.net/api/v2/generate";
@@ -44,10 +45,13 @@ export class AIHordeProvider implements ImageProvider {
     const width = Math.min(1024, Math.max(512, input.width || 1024));
     const height = Math.min(1024, Math.max(512, input.height || 1024));
     const count = Math.min(4, Math.max(1, input.count || 1));
-    // AI Horde expects source_image as raw Base64 image data, not a data: URL.
-    // The API documentation specifies a Base64-encoded WebP; raw Base64 is also
-    // accepted by the validator for uploaded image payloads.
-    const source = toBase64(await input.sourceImage.arrayBuffer());
+    // AI Horde specifies source_image as Base64-encoded WebP.
+    // Convert every accepted upload to WebP so JPEG/PNG uploads are valid img2img payloads.
+    const webp = await sharp(Buffer.from(await input.sourceImage.arrayBuffer()))
+      .rotate()
+      .webp({ quality: 92 })
+      .toBuffer();
+    const source = webp.toString("base64");
     const prompt = [
       "Create a commercial product image from the supplied source image.",
       "Preserve the product identity, shape, proportions, branding, colors and important details.",

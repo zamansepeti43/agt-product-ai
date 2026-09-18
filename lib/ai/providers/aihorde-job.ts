@@ -1,6 +1,6 @@
 import sharp from "sharp";
 import type { ImageJobMode, ProviderConfig } from "./types";
-import { getPreset } from "./presets";
+import { getPreset } from "../presets";
 
 const BASE_URL = "https://aihorde.net/api/v2/generate";
 const ANONYMOUS_KEY = "0000000000";

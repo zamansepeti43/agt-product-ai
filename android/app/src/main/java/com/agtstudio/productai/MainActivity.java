@@ -1,84 +1,12 @@
 package com.agtstudio.productai;
-
-import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Bundle;
-import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-
-public class MainActivity extends Activity {
-    private WebView webView;
-    private ValueCallback<Uri[]> filePathCallback;
-
-    @SuppressLint("SetJavaScriptEnabled")
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        webView = new WebView(this);
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return false;
-            }
-        });
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> callback, FileChooserParams params) {
-                if (filePathCallback != null) filePathCallback.onReceiveValue(null);
-                filePathCallback = callback;
-                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
-                intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-                intent.setType("image/*");
-                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                try {
-                    startActivityForResult(Intent.createChooser(intent, "Ürün fotoğrafı seç"), 1001);
-                } catch (Exception firstError) {
-                    Intent fallback = new Intent(Intent.ACTION_GET_CONTENT);
-                    fallback.addCategory(Intent.CATEGORY_OPENABLE);
-                    fallback.setType("image/*");
-                    fallback.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                    startActivityForResult(Intent.createChooser(fallback, "Ürün fotoğrafı seç"), 1001);
-                }
-                return true;
-            }
-        });
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.getSettings().setDomStorageEnabled(true);
-        webView.getSettings().setAllowFileAccess(false);
-        webView.getSettings().setAllowContentAccess(true);
-        webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
-        webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
-        setContentView(webView);
-        webView.loadUrl(BuildConfig.APP_URL);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != 1001 || filePathCallback == null) return;
-        Uri[] results = null;
-        if (resultCode == RESULT_OK && data != null) {
-            if (data.getClipData() != null) {
-                int count = data.getClipData().getItemCount();
-                results = new Uri[count];
-                for (int i = 0; i < count; i++) results[i] = data.getClipData().getItemAt(i).getUri();
-            } else if (data.getData() != null) {
-                results = new Uri[]{data.getData()};
-            }
-        }
-        filePathCallback.onReceiveValue(results);
-        filePathCallback = null;
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
-    }
+import android.annotation.SuppressLint;import android.app.Activity;import android.content.Intent;import android.net.Uri;import android.os.Bundle;import android.webkit.*;import android.util.Base64;import java.nio.charset.StandardCharsets;import java.security.KeyStore;import javax.crypto.*;import javax.crypto.spec.GCMParameterSpec;import androidx.webkit.WebViewAssetLoader;
+public class MainActivity extends Activity{
+ private WebView webView;private ValueCallback<Uri[]> filePathCallback;private static final String PREFS="agt_secure_vault",KEY_ALIAS="agt_product_ai_vault_v1";
+ @SuppressLint({"SetJavaScriptEnabled","JavascriptInterface"}) protected void onCreate(Bundle b){super.onCreate(b);webView=new WebView(this);WebViewAssetLoader l=new WebViewAssetLoader.Builder().addPathHandler("/assets/",new WebViewAssetLoader.AssetsPathHandler(this)).build();webView.setWebViewClient(new WebViewClient(){public WebResourceResponse shouldInterceptRequest(WebView v,WebResourceRequest r){return l.shouldInterceptRequest(r.getUrl());}});webView.setWebChromeClient(new WebChromeClient(){public boolean onShowFileChooser(WebView v,ValueCallback<Uri[]> c,FileChooserParams p){filePathCallback=c;Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("image/*");startActivityForResult(Intent.createChooser(i,"Ürün fotoğrafı seç"),1001);return true;}});webView.getSettings().setJavaScriptEnabled(true);webView.getSettings().setDomStorageEnabled(true);webView.getSettings().setAllowFileAccess(false);webView.getSettings().setAllowContentAccess(false);webView.addJavascriptInterface(new SecureVault(),"AGTNativeVault");setContentView(webView);webView.loadUrl("https://appassets.androidplatform.net/assets/mobile-dist/index.html");}
+ private SecretKey key()throws Exception{KeyStore k=KeyStore.getInstance("AndroidKeyStore");k.load(null);if(!k.containsAlias(KEY_ALIAS)){KeyGenerator g=KeyGenerator.getInstance("AES","AndroidKeyStore");g.init(256);g.generateKey();}return ((KeyStore.SecretKeyEntry)k.getEntry(KEY_ALIAS,null)).getSecretKey();}
+ private class SecureVault{@JavascriptInterface public String get(String n){try{String x=getPreferences(0).getString(n,null);if(x==null)return "";byte[] a=Base64.decode(x,Base64.DEFAULT),iv=new byte[12];System.arraycopy(a,0,iv,0,12);Cipher c=Cipher.getInstance("AES/GCM/NoPadding");c.init(Cipher.DECRYPT_MODE,key(),new GCMParameterSpec(128,iv));return new String(c.doFinal(a,12,a.length-12),StandardCharsets.UTF_8);}catch(Exception e){return "";}}
+ @JavascriptInterface public boolean set(String n,String v){try{byte[] iv=new byte[12];new java.security.SecureRandom().nextBytes(iv);Cipher c=Cipher.getInstance("AES/GCM/NoPadding");c.init(Cipher.ENCRYPT_MODE,key(),new GCMParameterSpec(128,iv));byte[] e=c.doFinal(v.getBytes(StandardCharsets.UTF_8)),a=new byte[iv.length+e.length];System.arraycopy(iv,0,a,0,iv.length);System.arraycopy(e,0,a,iv.length,e.length);return getPreferences(0).edit().putString(n,Base64.encodeToString(a,Base64.NO_WRAP)).commit();}catch(Exception e){return false;}}
+ @JavascriptInterface public boolean remove(String n){return getPreferences(0).edit().remove(n).commit();}}
+ @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(r!=1001||filePathCallback==null)return;Uri[] x=null;if(c==RESULT_OK&&d!=null&&d.getData()!=null)x=new Uri[]{d.getData()};filePathCallback.onReceiveValue(x);filePathCallback=null;}
+ @Override public void onBackPressed(){if(webView!=null&&webView.canGoBack())webView.goBack();else super.onBackPressed();}
 }

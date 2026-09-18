@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { setProviderCookie } from "@/lib/ai/provider-session";
 
 export const runtime = "nodejs";
 
@@ -50,13 +51,7 @@ export async function POST(request: Request) {
     }
 
     const response = NextResponse.json({ connected: true, token_type: data.token_type });
-    response.cookies.set("agt-pollinations-user", data.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: typeof data.expires_in === "number" ? Math.max(300, Math.floor(data.expires_in)) : 7 * 24 * 60 * 60,
-    });
+    setProviderCookie(response, "pollinations", { apiKey: data.access_token });
     return response;
   } catch {
     return NextResponse.json({ error: "Pollinations OAuth sunucusuna ulaşılamadı." }, { status: 502 });

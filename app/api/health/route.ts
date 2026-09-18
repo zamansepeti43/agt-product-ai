@@ -11,7 +11,7 @@ export async function GET() {
   const baseUrlConfigured = Boolean(process.env.COMFYUI_BASE_URL);
   const aiHordeConfigured = Boolean(process.env.AIHORDE_API_KEY);
   const autoFreeReady = workflowConfigured || availableImageProviders().includes("aihorde");
-  const imageReady = Boolean(provider && (provider.id !== "comfyui" || workflowConfigured)) || providerId === "auto-free" && autoFreeReady;
+  const imageReady = providerId === "auto-free" ? autoFreeReady : Boolean(provider && (provider.id !== "comfyui" || workflowConfigured));
   return NextResponse.json({
     ok: true,
     service: "agt-product-ai",

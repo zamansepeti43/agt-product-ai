@@ -45,7 +45,19 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ access_token: data.access_token, token_type: data.token_type });
+    if (typeof data.access_token !== "string" || !data.access_token.startsWith("sk_")) {
+      return NextResponse.json({ error: "Pollinations geçerli bir kullanıcı anahtarı döndürmedi." }, { status: 502 });
+    }
+
+    const response = NextResponse.json({ connected: true, token_type: data.token_type });
+    response.cookies.set("agt-pollinations-user", data.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: typeof data.expires_in === "number" ? Math.max(300, Math.floor(data.expires_in)) : 7 * 24 * 60 * 60,
+    });
+    return response;
   } catch {
     return NextResponse.json({ error: "Pollinations OAuth sunucusuna ulaşılamadı." }, { status: 502 });
   }

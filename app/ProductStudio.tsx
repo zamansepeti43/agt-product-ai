@@ -38,6 +38,8 @@ export default function ProductStudio() {
   const [assets, setAssets] = useState<GeneratedAsset[]>([]);
   const [finder, setFinder] = useState<any[]>([]);
   const [finderOpen, setFinderOpen] = useState(false);
+  const [pollinationsUserKey, setPollinationsUserKey] = useState("");
+  const [pollinationsAppKey, setPollinationsAppKey] = useState("");
 
   const selected = useMemo(() => GENERATION_PRESETS.find((p) => p.id === mode) || GENERATION_PRESETS[0], [mode]);
   const selectedProvider = providers.find((p) => p.id === provider) || providers[0];
@@ -45,6 +47,14 @@ export default function ProductStudio() {
   useEffect(() => {
     const saved = localStorage.getItem("agt-ai-provider");
     if (providers.some((p) => p.id === saved)) setProvider(saved as ProviderId);
+    const savedUserKey = localStorage.getItem("agt-pollinations-user-key") || "";
+    const savedAppKey = localStorage.getItem("agt-pollinations-app-key") || "";
+    setPollinationsUserKey(savedUserKey);
+    setPollinationsAppKey(savedAppKey);
+    if (new URLSearchParams(window.location.search).get("pollinations") === "connected") {
+      window.history.replaceState({}, "", window.location.pathname);
+      setError("");
+    }
   }, []);
 
   function selectProvider(id: ProviderId) {
@@ -76,13 +86,37 @@ export default function ProductStudio() {
     catch { setError("AI API Finder açılamadı."); }
   }
 
+  function connectPollinations() {
+    const appKey = pollinationsAppKey.trim();
+    if (!appKey.startsWith("pk_")) {
+      setError("Pollinations için ücretsiz bir App Key (pk_) gir. Bu anahtar üretim bakiyesi değildir; uygulamayı OAuth ile bağlamak içindir.");
+      return;
+    }
+    localStorage.setItem("agt-pollinations-app-key", appKey);
+    const redirectUri = `${window.location.origin}/pollinations/callback`;
+    const state = crypto.randomUUID();
+    sessionStorage.setItem("agt-pollinations-state", state);
+    const params = new URLSearchParams({
+      redirect_uri: redirectUri,
+      client_id: appKey,
+      response_type: "code",
+      scope: "usage",
+      state,
+      code_challenge_method: "S256",
+      code_challenge: state,
+      budget: "5",
+    });
+    window.location.href = `https://enter.pollinations.ai/authorize?${params.toString()}`;
+  }
+
   async function generate() {
     if (!files.length || busy) return;
     if (files.length !== 1) {
       setError("Şimdilik tek ürün görseli seçmelisin.");
       return;
     }
-    if (["gemini", "openai", "custom-openai", "pollinations"].includes(provider) && !apiKey.trim()) return setError("Bu provider için API anahtarı gerekli.");
+    if (["gemini", "openai", "custom-openai"].includes(provider) && !apiKey.trim()) return setError("Bu provider için API anahtarı gerekli.");
+    if (provider === "pollinations" && !pollinationsUserKey.trim()) return setError("Önce Pollinations bağlantısını kurmalısın.");
     if (provider === "cloudflare" && (!apiKey.trim() || !accountId.trim())) return setError("Cloudflare için Account ID ve API Token gerekli.");
     if (["openai", "custom-openai"].includes(provider) && !model.trim()) return setError("Model adı gerekli.");
     if (provider === "custom-openai" && !baseUrl.trim()) return setError("Özel API Base URL gerekli.");
@@ -100,13 +134,14 @@ export default function ProductStudio() {
       body.append("prompt", prompt);
       body.append("provider", provider);
       if (apiKey.trim()) body.append("providerApiKey", apiKey.trim());
+      if (provider === "pollinations" && pollinationsUserKey.trim()) body.set("providerApiKey", pollinationsUserKey.trim());
       if (model.trim()) body.append("providerModel", model.trim());
       if (baseUrl.trim()) body.append("providerBaseUrl", baseUrl.trim());
       if (accountId.trim()) body.append("providerAccountId", accountId.trim());
 
       const config: Record<string, ProviderConfig> = {};
       if ((provider === "auto-free" || provider === "aihorde") && apiKey.trim()) config.aihorde = { apiKey: apiKey.trim() };
-      if (provider === "pollinations") config.pollinations = { apiKey: apiKey.trim(), model: model.trim() };
+      if (provider === "pollinations") config.pollinations = { apiKey: pollinationsUserKey.trim(), model: model.trim() };
       if (provider === "openai") config.openai = { apiKey: apiKey.trim(), model: model.trim(), baseUrl: baseUrl.trim() };
       if (provider === "cloudflare") config.cloudflare = { apiKey: apiKey.trim(), model: model.trim(), accountId: accountId.trim() };
       if (provider === "custom-openai") config["custom-openai"] = { apiKey: apiKey.trim(), model: model.trim(), baseUrl: baseUrl.trim() };
@@ -221,14 +256,14 @@ export default function ProductStudio() {
       {provider !== "comfyui" && <div className="provider-fields">
         {provider === "cloudflare" && <input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Cloudflare Account ID" />}
         {provider === "auto-free" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="AI Horde API Key · opsiyonel" autoComplete="off" />}
-        {provider !== "auto-free" && provider !== "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={`${selectedProvider.label} API Key · gerekli`} autoComplete="off" />}
+        {provider === "pollinations" ? <div className="pollinations-connect-box"><input value={pollinationsAppKey} onChange={(e) => setPollinationsAppKey(e.target.value)} placeholder="Pollinations App Key · pk_..." autoComplete="off" /><button type="button" className="outline-button" onClick={connectPollinations}>{pollinationsUserKey ? "✓ Bağlandı · Yenile" : "⚡ Ücretsiz bağla"}</button></div> : provider !== "auto-free" && provider !== "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={`${selectedProvider.label} API Key · gerekli`} autoComplete="off" />}
         {provider === "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Cloudflare API Token" autoComplete="off" />}
         {["openai", "custom-openai", "cloudflare", "aihorde", "gemini", "pollinations"].includes(provider) && <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Model adı" />}
         {(provider === "openai" || provider === "custom-openai") && <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="API Base URL" />}
       </div>}
       {provider === "auto-free" && <p className="provider-help">🆓 Önce yapılandırılmış ComfyUI, sonra AI Horde denenir. AI Horde anahtarı opsiyoneldir.</p>}
       {provider === "aihorde" && <p className="provider-help">🌐 Anahtarsız kullanım ortak kuyruğa bağlıdır; hızlı üretim için Hızlı AI kullan.</p>}
-      {provider === "pollinations" && <p className="provider-help">⚡ Hızlı img2img. API anahtarını Pollinations hesabından bağla; model Qwen Image 3.</p>}
+      {provider === "pollinations" && <p className="provider-help">⚡ Hızlı img2img. API key yazmak yerine kendi Pollen bakiyeni OAuth ile bağlarız. App Key ücretsizdir; üretim kullanımı senin onayladığın bütçeden düşer.</p>}
       {provider === "cloudflare" && <p className="provider-help">Cloudflare img2img için Account ID + API Token gerekir.</p>}
     </section>
 

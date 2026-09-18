@@ -4,9 +4,9 @@ import type { GeneratedAsset, ImageProvider, ProductImageInput } from "../types"
 const BASE_URL = "https://aihorde.net/api/v2/generate";
 const ANONYMOUS_KEY = "0000000000";
 const DEFAULT_MODEL = "AlbedoBase XL (SDXL)";
-const MAX_WAIT_MS = 180_000;
+const MAX_WAIT_MS = 90_000;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
-const MAX_ATTEMPTS_PER_IMAGE = 3;
+const MAX_ROUNDS = 2;
 const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 function toBase64(bytes: ArrayBuffer) {
@@ -93,9 +93,6 @@ export class AIHordeProvider implements ImageProvider {
     const height = Math.min(1280, Math.max(512, input.height || 1024));
     const count = Math.min(4, Math.max(1, input.count || 1));
 
-    // AI Horde requires source_image to be raw Base64-encoded WebP.
-    // Normalize the uploaded product photo so JPEG/PNG/WEBP all use the same
-    // valid img2img payload and EXIF rotation is respected.
     const webp = await sharp(Buffer.from(await input.sourceImage.arrayBuffer()))
       .rotate()
       .webp({ quality: 92 })
@@ -111,16 +108,8 @@ export class AIHordeProvider implements ImageProvider {
       "No people or body parts in the scene.",
     ].join(" ");
 
-    const assets: GeneratedAsset[] = [];
-    let attempts = 0;
-
-    // Request one image at a time so the app can discard AI Horde safety-censored
-    // generations and replace them with another clean variation.
-    while (assets.length < count && attempts < count * MAX_ATTEMPTS_PER_IMAGE) {
-      const imageIndex = assets.length;
-      attempts += 1;
-      const prompt = `${basePrompt} ${variantInstruction(input.mode, imageIndex)} ### ${NEGATIVE_PROMPT}`;
-
+    async function requestOne(index: number) {
+      const prompt = `${basePrompt} ${variantInstruction(input.mode, index)} ### ${NEGATIVE_PROMPT}`;
       const response = await fetch(`${BASE_URL}/async`, {
         method: "POST",
         headers: { "Content-Type": "application/json", apikey: apiKey },
@@ -154,12 +143,11 @@ export class AIHordeProvider implements ImageProvider {
       }
 
       const started = Date.now();
-      let finishedStatus: any = null;
       while (Date.now() - started < MAX_WAIT_MS) {
         await new Promise((resolve) => setTimeout(resolve, 1800));
         const checkResponse = await fetch(`${BASE_URL}/check/${encodeURIComponent(submitted.id)}`, {
           headers: { apikey: apiKey },
-          signal: AbortSignal.timeout(30_000),
+          signal: AbortSignal.timeout(15_000),
         });
         const check = await checkResponse.json().catch(() => ({}));
         if (!checkResponse.ok) throw new Error(errorMessage(check, `AI Horde durum sorgusu başarısız (${checkResponse.status}).`));
@@ -168,39 +156,59 @@ export class AIHordeProvider implements ImageProvider {
 
         const statusResponse = await fetch(`${BASE_URL}/status/${encodeURIComponent(submitted.id)}`, {
           headers: { apikey: apiKey },
-          signal: AbortSignal.timeout(30_000),
+          signal: AbortSignal.timeout(15_000),
         });
-        finishedStatus = await statusResponse.json().catch(() => ({}));
-        if (!statusResponse.ok) throw new Error(errorMessage(finishedStatus, `AI Horde sonuç sorgusu başarısız (${statusResponse.status}).`));
-        break;
+        const finished = await statusResponse.json().catch(() => ({}));
+        if (!statusResponse.ok) throw new Error(errorMessage(finished, `AI Horde sonuç sorgusu başarısız (${statusResponse.status}).`));
+
+        const generation = Array.isArray(finished.generations) ? finished.generations[0] : null;
+        if (!generation?.img) return null;
+        if (generation.censored === true || generation.state === "censored") return null;
+        const metadata = Array.isArray(generation.gen_metadata) ? generation.gen_metadata : [];
+        if (metadata.some((item: any) => item?.type === "censorship")) return null;
+
+        return await normalizeImage(String(generation.img));
+      }
+      return null;
+    }
+
+    // Run all requested images concurrently. The previous implementation waited
+    // for image 1, then image 2, etc.; four 90s waits could hit Vercel's 300s
+    // function limit. Parallel requests keep the whole generation well below it.
+    const assets: GeneratedAsset[] = [];
+    const usedIndexes = new Set<number>();
+
+    for (let round = 0; round < MAX_ROUNDS && assets.length < count; round += 1) {
+      const indexes = Array.from({ length: count }, (_, i) => i).filter((i) => !usedIndexes.has(i));
+      const results = await Promise.allSettled(indexes.map((index) => requestOne(index)));
+
+      for (let i = 0; i < results.length; i += 1) {
+        const index = indexes[i];
+        const result = results[i];
+        if (result.status === "fulfilled" && result.value) {
+          assets.push({
+            id: `aihorde-${round}-${index}-${assets.length + 1}`,
+            url: result.value,
+            mode: input.mode,
+            width,
+            height,
+          });
+          usedIndexes.add(index);
+        }
       }
 
-      if (!finishedStatus) throw new Error("AI Horde kuyruğu zaman aşımına uğradı.");
-
-      const generations = Array.isArray(finishedStatus.generations) ? finishedStatus.generations : [];
-      const generation = generations[0];
-      if (!generation?.img) continue;
-
-      if (generation.censored === true || generation.state === "censored") continue;
-
-      const metadata = Array.isArray(generation.gen_metadata) ? generation.gen_metadata : [];
-      if (metadata.some((item: any) => item?.type === "censorship")) continue;
-
-      const url = await normalizeImage(String(generation.img));
-      assets.push({
-        id: `aihorde-${submitted.id}-${assets.length + 1}`,
-        url,
-        mode: input.mode,
-        width,
-        height,
-      });
+      // If Horde censored/failed some variations, retry only the missing slots.
+      // The retry is also parallel, rather than serial.
+      if (assets.length < count && round + 1 < MAX_ROUNDS) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
     }
 
     if (!assets.length) {
-      throw new Error("AI Horde güvenli bir ürün görseli üretemedi. Farklı bir üretim denemesi yap.");
+      throw new Error("AI Horde güvenli bir ürün görseli üretemedi. Lütfen tekrar dene.");
     }
     if (assets.length < count) {
-      throw new Error(`AI Horde ${assets.length}/${count} temiz ürün görseli üretebildi. Tekrar deneyebilirsin.`);
+      throw new Error(`AI Horde ${assets.length}/${count} temiz ürün görseli üretebildi. Lütfen tekrar dene.`);
     }
     return assets;
   }

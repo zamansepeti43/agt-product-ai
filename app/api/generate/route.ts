@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { getProviderConfig } from "@/lib/ai/provider-session";
 import { configuredImageProviderId, generateWithConfiguredStrategy } from "@/lib/ai/provider";
 import { getPreset } from "@/lib/ai/presets";
 import type { GenerationJob, ImageJobMode, ProviderConfig } from "@/lib/ai/types";
@@ -13,20 +13,22 @@ const MODES = new Set<ImageJobMode>(["hero", "white", "studio", "lifestyle", "de
 const PROVIDERS = new Set(["gemini", "comfyui", "aihorde", "pollinations", "cloudflare", "openai", "custom-openai", "auto-free"]);
 function readProviderConfig(formData: FormData) {
   const provider = String(formData.get("provider") || process.env.IMAGE_PROVIDER || "").trim().toLowerCase();
-  const fallback: ProviderConfig = { apiKey: String(formData.get("providerApiKey") || "").trim().slice(0, 500), model: String(formData.get("providerModel") || "").trim().slice(0, 160), baseUrl: String(formData.get("providerBaseUrl") || "").trim().slice(0, 500), accountId: String(formData.get("providerAccountId") || "").trim().slice(0, 160) };
-  let configs: ProviderConfigMap = provider && provider !== "auto-free" ? { [provider]: fallback } : {};
-  const rawConfigs = String(formData.get("providerConfigs") || "").trim();
-  if (rawConfigs) { try { const parsed = JSON.parse(rawConfigs) as Record<string, unknown>; configs = Object.fromEntries(Object.entries(parsed).map(([id,value]) => { const c=value&&typeof value==="object"?value as Record<string,unknown>:{}; return [id,{apiKey:typeof c.apiKey==="string"?c.apiKey.slice(0,500):undefined,model:typeof c.model==="string"?c.model.slice(0,160):undefined,baseUrl:typeof c.baseUrl==="string"?c.baseUrl.slice(0,500):undefined,accountId:typeof c.accountId==="string"?c.accountId.slice(0,160):undefined} satisfies ProviderConfig]; })); } catch { throw new Error("AI provider ayarları geçerli JSON değil."); } }
+  const fallback: ProviderConfig = {
+    model: String(formData.get("providerModel") || "").trim().slice(0, 160),
+    baseUrl: String(formData.get("providerBaseUrl") || "").trim().slice(0, 500),
+    accountId: String(formData.get("providerAccountId") || "").trim().slice(0, 160),
+  };
+  const configs: ProviderConfigMap = provider && provider !== "auto-free" ? { [provider]: fallback } : {};
   return { provider, configs };
 }
 export async function POST(request: Request) {
   try {
     const formData=await request.formData(); const file=formData.get("image"); const rawMode=String(formData.get("mode")??"hero"); const rawCount=Number(formData.get("count")??1); const customPrompt=String(formData.get("prompt")??"").trim().slice(0,1200); const {provider:providerId,configs}=readProviderConfig(formData);
     if (!(file instanceof File)) return NextResponse.json({error:"Ürün görseli gerekli."},{status:400}); if(!ALLOWED_TYPES.has(file.type)) return NextResponse.json({error:"Sadece JPG, PNG veya WEBP kabul edilir."},{status:415}); if(file.size===0||file.size>MAX_FILE_SIZE) return NextResponse.json({error:"Görsel 12 MB'dan küçük olmalı."},{status:413}); if(!MODES.has(rawMode as ImageJobMode)) return NextResponse.json({error:"Geçersiz üretim modu."},{status:400}); if(!Number.isInteger(rawCount)||rawCount<1||rawCount>4) return NextResponse.json({error:"Görsel sayısı 1 ile 4 arasında olmalı."},{status:400}); if(providerId&&!PROVIDERS.has(providerId)) return NextResponse.json({error:"Desteklenmeyen AI provider."},{status:400});
-    if (providerId === "pollinations") {
-      const userKey = (await cookies()).get("agt-pollinations-user")?.value;
-      if (!userKey?.startsWith("sk_")) return NextResponse.json({error:"Pollinations hesabı bağlı değil. Önce hesabını bağla."},{status:401});
-      configs.pollinations = { ...(configs.pollinations || {}), apiKey:userKey };
+    if (providerId && providerId !== "auto-free" && providerId !== "comfyui") {
+      const stored = await getProviderConfig(providerId);
+      configs[providerId] = { ...configs[providerId], apiKey: stored.apiKey, accountId: stored.accountId };
+      if (providerId !== "aihorde" && !stored.apiKey) return NextResponse.json({error:"Bu AI provider bağlı değil. Önce API anahtarını bağla."},{status:401});
     }
     const mode=rawMode as ImageJobMode; const preset=getPreset(mode); const effectiveProviderId=providerId||configuredImageProviderId(); const hasStrategy=effectiveProviderId==="auto-free"||Boolean(effectiveProviderId); const prompt=customPrompt?`${preset.prompt}\n\nEk kullanıcı talimatı: ${customPrompt}`:preset.prompt;
     const job:GenerationJob={id:randomUUID(),status:hasStrategy?"processing":"queued",mode,provider:effectiveProviderId||"not-configured",createdAt:new Date().toISOString(),message:hasStrategy?`${preset.label} üretimi başlatıldı.`:"Görsel doğrulandı. AI provider bağlantısı bekleniyor."};

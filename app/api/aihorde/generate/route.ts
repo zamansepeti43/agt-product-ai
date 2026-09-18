@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPreset } from "@/lib/ai/presets";
 import type { ImageJobMode, ProviderConfig } from "@/lib/ai/types";
+import { getProviderConfig } from "@/lib/ai/provider-session";
 import { buildHordeSubmission } from "@/lib/ai/providers/aihorde-job";
 
 export const runtime = "nodejs";
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     if (!MODES.has(mode) || !Number.isInteger(count)) return NextResponse.json({ error: "Geçersiz üretim ayarı." }, { status: 400 });
 
     const prompt = String(form.get("prompt") || "").trim().slice(0, 1200);
-    const providerApiKey = String(form.get("providerApiKey") || "").trim().slice(0, 500);
+    const providerApiKey = (await getProviderConfig("aihorde")).apiKey || "";
     const providerModel = String(form.get("providerModel") || "").trim().slice(0, 160);
     const job = await buildHordeSubmission({
       sourceImage: file,

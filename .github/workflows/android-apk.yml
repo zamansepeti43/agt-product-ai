@@ -5,7 +5,7 @@ on:
     paths: ["android/**","mobile-dist/**",".github/workflows/android-apk.yml"]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -21,6 +21,14 @@ jobs:
       - name: Build
         working-directory: android
         run: gradle assembleDebug
+      - name: Publish installable test APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "apk-test-${GITHUB_RUN_NUMBER}" android/app/build/outputs/apk/debug/app-debug.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "AGT Product AI APK Test #${GITHUB_RUN_NUMBER}" \
+            --notes "Installable debug APK for phone testing. Built from main."
       - uses: actions/upload-artifact@v4
         with:
           name: AGT-Product-AI-APK

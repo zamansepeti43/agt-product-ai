@@ -10,7 +10,8 @@ export async function GET() {
   const workflowConfigured = Boolean(process.env.COMFYUI_WORKFLOW_JSON);
   const baseUrlConfigured = Boolean(process.env.COMFYUI_BASE_URL);
   const aiHordeConfigured = Boolean(process.env.AIHORDE_API_KEY);
-  const imageReady = Boolean(provider && (provider.id !== "comfyui" || workflowConfigured));
+  const autoFreeReady = workflowConfigured || availableImageProviders().includes("aihorde");
+  const imageReady = Boolean(provider && (provider.id !== "comfyui" || workflowConfigured)) || providerId === "auto-free" && autoFreeReady;
   return NextResponse.json({
     ok: true,
     service: "agt-product-ai",
@@ -22,11 +23,11 @@ export async function GET() {
       imageReady,
       autoFree: {
         comfyui: workflowConfigured,
-        aihorde: aiHordeConfigured,
+        aihorde: true,
         gemini: false,
       },
       background: process.env.BACKGROUND_PROVIDER || "not-configured",
     },
-    config: { comfyui: { baseUrlConfigured, workflowConfigured }, aihorde: { apiKeyConfigured: aiHordeConfigured } },
+    config: { comfyui: { baseUrlConfigured, workflowConfigured }, aihorde: { apiKeyConfigured: aiHordeConfigured, anonymousFallback: true } },
   }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -99,12 +99,8 @@ export default function ProductStudio() {
     const params = new URLSearchParams({
       redirect_uri: redirectUri,
       client_id: appKey,
-      response_type: "code",
       scope: "usage",
       state,
-      code_challenge_method: "S256",
-      code_challenge: state,
-      budget: "5",
     });
     window.location.href = `https://enter.pollinations.ai/authorize?${params.toString()}`;
   }

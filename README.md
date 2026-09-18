@@ -2,7 +2,7 @@
 
 Mobile-first AI product studio for e-commerce creators.
 
-> Deployment pipeline: Vercel production is connected to the `main` branch.
+> Deployment: Netlify production is intended for the hosted web app; the repository remains portable and does not require Vercel.
 
 ## Current build — v0.5
 

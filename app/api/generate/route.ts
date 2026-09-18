@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { configuredImageProviderId, generateWithConfiguredStrategy } from "@/lib/ai/provider";
 import { getPreset } from "@/lib/ai/presets";
 import type { GenerationJob, ImageJobMode, ProviderConfig } from "@/lib/ai/types";
@@ -22,6 +23,11 @@ export async function POST(request: Request) {
   try {
     const formData=await request.formData(); const file=formData.get("image"); const rawMode=String(formData.get("mode")??"hero"); const rawCount=Number(formData.get("count")??1); const customPrompt=String(formData.get("prompt")??"").trim().slice(0,1200); const {provider:providerId,configs}=readProviderConfig(formData);
     if (!(file instanceof File)) return NextResponse.json({error:"Ürün görseli gerekli."},{status:400}); if(!ALLOWED_TYPES.has(file.type)) return NextResponse.json({error:"Sadece JPG, PNG veya WEBP kabul edilir."},{status:415}); if(file.size===0||file.size>MAX_FILE_SIZE) return NextResponse.json({error:"Görsel 12 MB'dan küçük olmalı."},{status:413}); if(!MODES.has(rawMode as ImageJobMode)) return NextResponse.json({error:"Geçersiz üretim modu."},{status:400}); if(!Number.isInteger(rawCount)||rawCount<1||rawCount>4) return NextResponse.json({error:"Görsel sayısı 1 ile 4 arasında olmalı."},{status:400}); if(providerId&&!PROVIDERS.has(providerId)) return NextResponse.json({error:"Desteklenmeyen AI provider."},{status:400});
+    if (providerId === "pollinations") {
+      const userKey = (await cookies()).get("agt-pollinations-user")?.value;
+      if (!userKey?.startsWith("sk_")) return NextResponse.json({error:"Pollinations hesabı bağlı değil. Önce hesabını bağla."},{status:401});
+      configs.pollinations = { ...(configs.pollinations || {}), apiKey:userKey };
+    }
     const mode=rawMode as ImageJobMode; const preset=getPreset(mode); const effectiveProviderId=providerId||configuredImageProviderId(); const hasStrategy=effectiveProviderId==="auto-free"||Boolean(effectiveProviderId); const prompt=customPrompt?`${preset.prompt}\n\nEk kullanıcı talimatı: ${customPrompt}`:preset.prompt;
     const job:GenerationJob={id:randomUUID(),status:hasStrategy?"processing":"queued",mode,provider:effectiveProviderId||"not-configured",createdAt:new Date().toISOString(),message:hasStrategy?`${preset.label} üretimi başlatıldı.`:"Görsel doğrulandı. AI provider bağlantısı bekleniyor."};
     if(!hasStrategy) return NextResponse.json({job,input:{fileName:file.name,mimeType:file.type,sizeBytes:file.size,count:rawCount,preset}},{status:202});

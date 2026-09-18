@@ -54,13 +54,13 @@ export default function ProductStudio() {
     }
   }, [])
   useEffect(() => {
-    if (!["gemini", "openai", "custom-openai", "cloudflare"].includes(provider)) {
+    if (!["gemini", "openai", "custom-openai", "cloudflare", "aihorde"].includes(provider)) {
       setProviderConnected(false);
       return;
     }
     fetch("/api/provider-config?provider=" + encodeURIComponent(provider), { cache: "no-store" })
       .then((r) => r.ok ? r.json() : { connected: false })
-      .then((data) => setProviderConnected(Boolean(data.connected)))
+      .then((data) => { setProviderConnected(Boolean(data.connected)); if (provider === "cloudflare" && data.accountId) setAccountId(String(data.accountId)); })
       .catch(() => setProviderConnected(false));
   }, [provider]);;
 
@@ -145,6 +145,7 @@ export default function ProductStudio() {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || "API anahtarı güvenli oturuma kaydedilemedi.");
     setProviderConnected(true);
+    setApiKey("");
     return true;
   }
 

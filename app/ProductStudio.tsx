@@ -172,13 +172,13 @@ export default function ProductStudio() {
       body.append("count", String(count));
       body.append("prompt", prompt);
       body.append("provider", provider);
-      if (apiKey.trim()) body.append("providerApiKey", apiKey.trim());
+      // Provider secrets are stored in an HttpOnly cookie and are never sent with generation requests.
       if (model.trim()) body.append("providerModel", model.trim());
       if (baseUrl.trim()) body.append("providerBaseUrl", baseUrl.trim());
       if (accountId.trim()) body.append("providerAccountId", accountId.trim());
 
       const config: Record<string, ProviderConfig> = {};
-      if ((provider === "auto-free" || provider === "aihorde") && apiKey.trim()) config.aihorde = { apiKey: apiKey.trim() };
+
       if (provider === "pollinations") config.pollinations = { model: model.trim() };
       if (provider === "openai") config.openai = { model: model.trim(), baseUrl: baseUrl.trim() };
       if (provider === "cloudflare") config.cloudflare = { model: model.trim(), accountId: accountId.trim() };

@@ -87,7 +87,7 @@ export class AIHordeProvider implements ImageProvider {
   readonly id = "aihorde";
 
   async generate(input: ProductImageInput): Promise<GeneratedAsset[]> {
-    const apiKey = input.providerConfig?.apiKey?.trim() || process.env.AIHORDE_API_KEY?.trim() || ANONYMOUS_KEY;
+    const apiKey = input.providerConfig?.apiKey?.trim() || ANONYMOUS_KEY;
     const model = input.providerConfig?.model?.trim() || process.env.AIHORDE_MODEL?.trim() || DEFAULT_MODEL;
     const width = Math.min(1024, Math.max(512, input.width || 1024));
     const height = Math.min(1280, Math.max(512, input.height || 1024));

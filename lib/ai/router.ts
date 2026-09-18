@@ -32,14 +32,22 @@ export async function generateWithFallback(candidates: ProviderCandidate[], inpu
 }
 
 export function buildAutoFreeCandidates(providers: Record<string, ImageProvider>, configs: ProviderConfigMap) {
-  // Only genuinely free/self-hosted providers belong in this pool.
-  // Gemini image models are intentionally excluded because their current API image tier is paid-only.
-  // AI Horde is included only when a registered key is configured; anonymous image-to-image requests can be shared by the service.
+  // ComfyUI is used first when configured. AI Horde is always available as the
+  // no-key community fallback; a registered key can still be supplied for better
+  // queue priority/rate limits according to AI Horde service policy.
   const preferredOrder = ["comfyui", "aihorde"];
   return preferredOrder
     .filter((id) => {
       if (!providers[id]) return false;
-      if (id === "aihorde") return Boolean(configs[id]?.apiKey?.trim() || process.env.AIHORDE_API_KEY?.trim());
+      if (id === "comfyui") {
+        return Boolean(
+          configs[id]?.baseUrl?.trim() ||
+          configs[id]?.model?.trim() ||
+          process.env.COMFYUI_BASE_URL?.trim() ||
+          process.env.COMFYUI_WORKFLOW_JSON?.trim(),
+        );
+      }
+      if (id === "aihorde") return true;
       return true;
     })
     .map((id) => ({ id, provider: providers[id], config: configs[id] }));

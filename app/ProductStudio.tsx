@@ -79,7 +79,7 @@ export default function ProductStudio() {
   async function generate() {
     if (!files.length || busy) return;
     if (files.length !== 1) {
-      setError("AI Horde için tek ürün görseli seçmelisin.");
+      setError("Şimdilik tek ürün görseli seçmelisin.");
       return;
     }
     if (["gemini", "openai", "custom-openai", "pollinations"].includes(provider) && !apiKey.trim()) return setError("Bu provider için API anahtarı gerekli.");

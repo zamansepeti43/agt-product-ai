@@ -18,8 +18,8 @@ export class CloudflareImageProvider implements ImageProvider {
   readonly id = "cloudflare";
 
   async generate(input: ProductImageInput): Promise<GeneratedAsset[]> {
-    const accountId = input.providerConfig?.accountId?.trim() || process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
-    const token = input.providerConfig?.apiKey?.trim() || process.env.CLOUDFLARE_API_TOKEN?.trim();
+    const accountId = input.providerConfig?.accountId?.trim();
+    const token = input.providerConfig?.apiKey?.trim();
     const model = input.providerConfig?.model?.trim() || process.env.CLOUDFLARE_IMAGE_MODEL?.trim() || DEFAULT_MODEL;
     if (!accountId || !token) throw new Error("Cloudflare Workers AI için Account ID ve API Token gerekli.");
 

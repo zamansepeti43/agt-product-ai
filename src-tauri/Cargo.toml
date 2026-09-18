@@ -1,20 +1,16 @@
 [package]
-name = "agt-product-ai"
-version = "0.5.1"
-description = "AGT Product AI desktop shell"
-authors = ["AGT Studio"]
-edition = "2021"
-
+name="agt-product-ai"
+version="1.0.0"
+description="AGT Product AI standalone desktop application"
+authors=["AGT Studio"]
+edition="2021"
 [lib]
-name = "agt_product_ai_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
-
+name="agt_product_ai_lib"
+crate-type=["staticlib","cdylib","rlib"]
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
-
+tauri-build={version="2",features=[]}
 [dependencies]
-tauri = { version = "2", features = [] }
-
+tauri={version="2",features=[]}
 [features]
-default = ["custom-protocol"]
-custom-protocol = ["tauri/custom-protocol"]
+default=["custom-protocol"]
+custom-protocol=["tauri/custom-protocol"]

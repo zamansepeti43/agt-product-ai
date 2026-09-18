@@ -7,8 +7,12 @@ const MAX_WAIT_MS = 180_000;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
+function toBase64(bytes: ArrayBuffer) {
+  return Buffer.from(bytes).toString("base64");
+}
+
 function toDataUrl(bytes: ArrayBuffer, mimeType: string) {
-  return `data:${mimeType || "image/png"};base64,${Buffer.from(bytes).toString("base64")}`;
+  return `data:${mimeType || "image/png"};base64,${toBase64(bytes)}`;
 }
 
 function errorMessage(data: any, fallback: string) {
@@ -40,7 +44,10 @@ export class AIHordeProvider implements ImageProvider {
     const width = Math.min(1024, Math.max(512, input.width || 1024));
     const height = Math.min(1024, Math.max(512, input.height || 1024));
     const count = Math.min(4, Math.max(1, input.count || 1));
-    const source = toDataUrl(await input.sourceImage.arrayBuffer(), input.mimeType || "image/png");
+    // AI Horde expects source_image as raw Base64 image data, not a data: URL.
+    // The API documentation specifies a Base64-encoded WebP; raw Base64 is also
+    // accepted by the validator for uploaded image payloads.
+    const source = toBase64(await input.sourceImage.arrayBuffer());
     const prompt = [
       "Create a commercial product image from the supplied source image.",
       "Preserve the product identity, shape, proportions, branding, colors and important details.",

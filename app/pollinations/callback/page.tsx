@@ -13,7 +13,7 @@ export default function PollinationsCallbackPage() {
       const error = query.get("error");
       const expectedState = sessionStorage.getItem("agt-pollinations-state");
       const verifier = sessionStorage.getItem("agt-pollinations-pkce-verifier");
-      const appKey = localStorage.getItem("agt-pollinations-app-key");
+      const appKey = process.env.NEXT_PUBLIC_POLLINATIONS_APP_KEY?.trim() || "";
       const redirectUri = `${window.location.origin}/pollinations/callback`;
 
       if (error) {
@@ -38,11 +38,11 @@ export default function PollinationsCallbackPage() {
           body: JSON.stringify({ code, clientId: appKey, redirectUri, codeVerifier: verifier }),
         });
         const data = await response.json();
-        if (!response.ok || !data.access_token?.startsWith("sk_")) {
+        if (!response.ok || !data.connected) {
           throw new Error(data.error || "Token alınamadı.");
         }
 
-        localStorage.setItem("agt-pollinations-user-key", data.access_token);
+        localStorage.setItem("agt-pollinations-connected", "true");
         sessionStorage.removeItem("agt-pollinations-state");
         sessionStorage.removeItem("agt-pollinations-pkce-verifier");
         setMessage("✓ Pollinations bağlandı. AGT Product AI'ya dönüyorsun…");

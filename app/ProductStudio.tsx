@@ -293,13 +293,13 @@ export default function ProductStudio() {
       <div id="provider-options" className="provider-options">{providers.map((p) => <button key={p.id} onClick={() => selectProvider(p.id)} className={`provider-option ${provider === p.id ? "is-selected" : ""}`}><strong>{p.icon} {p.label}</strong><small>{p.note}</small></button>)}</div>
       {provider !== "comfyui" && <div className="provider-fields">
         {provider === "cloudflare" && <input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Cloudflare Account ID" />}
-        {provider === "auto-free" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="AI Horde API Key · opsiyonel" autoComplete="off" />}
+        
         {provider === "pollinations" ? <div className="pollinations-connect-box"><button type="button" className="outline-button" onClick={connectPollinations}>{pollinationsConnected ? "✓ Bağlandı · Yenile" : "⚡ Pollinations hesabını bağla"}</button></div> : provider !== "auto-free" && provider !== "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={`${selectedProvider.label} API Key · gerekli`} autoComplete="off" />}
         {provider === "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Cloudflare API Token" autoComplete="off" />}
         {["openai", "custom-openai", "cloudflare", "aihorde", "gemini", "pollinations"].includes(provider) && <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Model adı" />}
         {(provider === "openai" || provider === "custom-openai") && <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="API Base URL" />}
       </div>}
-      {provider === "auto-free" && <p className="provider-help">🆓 Önce yapılandırılmış ComfyUI, sonra AI Horde denenir. AI Horde anahtarı opsiyoneldir.</p>}
+      {provider === "auto-free" && <p className="provider-help">🆓 Önce yapılandırılmış ComfyUI, sonra AI Horde denenir. Anahtar girmeden topluluk kuyruğu kullanılabilir.</p>}
       {provider === "aihorde" && <p className="provider-help">🌐 Anahtarsız kullanım ortak kuyruğa bağlıdır; hızlı üretim için Hızlı AI kullan.</p>}
       {provider === "pollinations" && <p className="provider-help">⚡ Kendi Pollinations hesabını bağla. AGT uygulama kimliği sabittir; kullanım senin onayladığın kapsam ve bütçeden düşer. Secret key tarayıcıda tutulmaz.</p>}
       {provider === "cloudflare" && <p className="provider-help">Cloudflare img2img için Account ID + API Token gerekir.</p>}

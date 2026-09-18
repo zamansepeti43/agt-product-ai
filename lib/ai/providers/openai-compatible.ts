@@ -70,7 +70,7 @@ export class OpenAICompatibleImageProvider implements ImageProvider {
   async generate(input: ProductImageInput): Promise<GeneratedAsset[]> {
     const baseUrl = cleanBaseUrl(input.providerConfig?.baseUrl || process.env.CUSTOM_AI_BASE_URL);
     const baseUrlObject = await assertSafeRemoteUrl(baseUrl);
-    const apiKey = input.providerConfig?.apiKey?.trim() || process.env.CUSTOM_AI_API_KEY?.trim() || "";
+    const apiKey = input.providerConfig?.apiKey?.trim() || "";
     const model = input.providerConfig?.model?.trim() || process.env.CUSTOM_AI_MODEL?.trim();
     if (!model) throw new Error("Özel API için model adı gerekli.");
 

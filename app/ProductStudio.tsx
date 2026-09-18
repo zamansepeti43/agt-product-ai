@@ -132,6 +132,7 @@ export default function ProductStudio() {
   async function connectProviderCredentials() {
     if (!["gemini", "openai", "custom-openai", "cloudflare", "aihorde"].includes(provider)) return true;
     if (provider === "aihorde" && !apiKey.trim()) return true;
+    if (providerConnected && !apiKey.trim()) return true;
     if (!apiKey.trim()) {
       setError("Önce bu provider için API anahtarını gir.");
       return false;

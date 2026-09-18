@@ -38,8 +38,7 @@ export default function ProductStudio() {
   const [assets, setAssets] = useState<GeneratedAsset[]>([]);
   const [finder, setFinder] = useState<any[]>([]);
   const [finderOpen, setFinderOpen] = useState(false);
-  const [pollinationsUserKey, setPollinationsUserKey] = useState("");
-  const [pollinationsAppKey, setPollinationsAppKey] = useState("");
+  const [pollinationsConnected, setPollinationsConnected] = useState(false);
 
   const selected = useMemo(() => GENERATION_PRESETS.find((p) => p.id === mode) || GENERATION_PRESETS[0], [mode]);
   const selectedProvider = providers.find((p) => p.id === provider) || providers[0];
@@ -47,10 +46,7 @@ export default function ProductStudio() {
   useEffect(() => {
     const saved = localStorage.getItem("agt-ai-provider");
     if (providers.some((p) => p.id === saved)) setProvider(saved as ProviderId);
-    const savedUserKey = localStorage.getItem("agt-pollinations-user-key") || "";
-    const savedAppKey = localStorage.getItem("agt-pollinations-app-key") || "";
-    setPollinationsUserKey(savedUserKey);
-    setPollinationsAppKey(savedAppKey);
+    setPollinationsConnected(localStorage.getItem("agt-pollinations-connected") === "true");
     if (new URLSearchParams(window.location.search).get("pollinations") === "connected") {
       window.history.replaceState({}, "", window.location.pathname);
       setError("");
@@ -87,9 +83,9 @@ export default function ProductStudio() {
   }
 
   async function connectPollinations() {
-    const appKey = pollinationsAppKey.trim();
+    const appKey = process.env.NEXT_PUBLIC_POLLINATIONS_APP_KEY?.trim() || "";
     if (!appKey.startsWith("pk_")) {
-      setError("Önce Pollinations'tan bir App Key (pk_) oluşturup AGT callback adresini tanımlamalısın.");
+      setError("AGT için Pollinations App Key yapılandırılmamış. NEXT_PUBLIC_POLLINATIONS_APP_KEY ayarını ekle.");
       return;
     }
 
@@ -101,7 +97,6 @@ export default function ProductStudio() {
       const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
         .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 
-      localStorage.setItem("agt-pollinations-app-key", appKey);
       sessionStorage.setItem("agt-pollinations-pkce-verifier", verifier);
       const state = crypto.randomUUID();
       sessionStorage.setItem("agt-pollinations-state", state);
@@ -129,7 +124,7 @@ export default function ProductStudio() {
       return;
     }
     if (["gemini", "openai", "custom-openai"].includes(provider) && !apiKey.trim()) return setError("Bu provider için API anahtarı gerekli.");
-    if (provider === "pollinations" && !pollinationsUserKey.trim()) return setError("Önce Pollinations bağlantısını kurmalısın.");
+    if (provider === "pollinations" && !pollinationsConnected) return setError("Önce Pollinations bağlantısını kurmalısın.");
     if (provider === "cloudflare" && (!apiKey.trim() || !accountId.trim())) return setError("Cloudflare için Account ID ve API Token gerekli.");
     if (["openai", "custom-openai"].includes(provider) && !model.trim()) return setError("Model adı gerekli.");
     if (provider === "custom-openai" && !baseUrl.trim()) return setError("Özel API Base URL gerekli.");
@@ -269,14 +264,14 @@ export default function ProductStudio() {
       {provider !== "comfyui" && <div className="provider-fields">
         {provider === "cloudflare" && <input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Cloudflare Account ID" />}
         {provider === "auto-free" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="AI Horde API Key · opsiyonel" autoComplete="off" />}
-        {provider === "pollinations" ? <div className="pollinations-connect-box"><input value={pollinationsAppKey} onChange={(e) => setPollinationsAppKey(e.target.value)} placeholder="Pollinations App Key · pk_..." autoComplete="off" /><button type="button" className="outline-button" onClick={connectPollinations}>{pollinationsUserKey ? "✓ Bağlandı · Yenile" : "⚡ Ücretsiz bağla"}</button></div> : provider !== "auto-free" && provider !== "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={`${selectedProvider.label} API Key · gerekli`} autoComplete="off" />}
+        {provider === "pollinations" ? <div className="pollinations-connect-box"><input <button type="button" className="outline-button" onClick={connectPollinations}>{pollinationsConnected ? "✓ Bağlandı · Yenile" : "⚡ Pollinations hesabını bağla"}</button></div> : provider !== "auto-free" && provider !== "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={`${selectedProvider.label} API Key · gerekli`} autoComplete="off" />}
         {provider === "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Cloudflare API Token" autoComplete="off" />}
         {["openai", "custom-openai", "cloudflare", "aihorde", "gemini", "pollinations"].includes(provider) && <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Model adı" />}
         {(provider === "openai" || provider === "custom-openai") && <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="API Base URL" />}
       </div>}
       {provider === "auto-free" && <p className="provider-help">🆓 Önce yapılandırılmış ComfyUI, sonra AI Horde denenir. AI Horde anahtarı opsiyoneldir.</p>}
       {provider === "aihorde" && <p className="provider-help">🌐 Anahtarsız kullanım ortak kuyruğa bağlıdır; hızlı üretim için Hızlı AI kullan.</p>}
-      {provider === "pollinations" && <p className="provider-help">⚡ Hızlı img2img. Bir kez OAuth ile bağlan; üretim, Pollinations onayında belirlediğin kapsam/bütçe üzerinden çalışır.</p>}
+      {provider === "pollinations" && <p className="provider-help">⚡ Kendi Pollinations hesabını bağla. AGT uygulama kimliği sabittir; kullanım senin onayladığın kapsam ve bütçeden düşer. Secret key tarayıcıda tutulmaz.</p>}
       {provider === "cloudflare" && <p className="provider-help">Cloudflare img2img için Account ID + API Token gerekir.</p>}
     </section>
 

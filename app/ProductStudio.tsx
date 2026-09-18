@@ -86,23 +86,40 @@ export default function ProductStudio() {
     catch { setError("AI API Finder açılamadı."); }
   }
 
-  function connectPollinations() {
+  async function connectPollinations() {
     const appKey = pollinationsAppKey.trim();
     if (!appKey.startsWith("pk_")) {
-      setError("Pollinations için ücretsiz bir App Key (pk_) gir. Bu anahtar üretim bakiyesi değildir; uygulamayı OAuth ile bağlamak içindir.");
+      setError("Önce Pollinations'tan bir App Key (pk_) oluşturup AGT callback adresini tanımlamalısın.");
       return;
     }
-    localStorage.setItem("agt-pollinations-app-key", appKey);
-    const redirectUri = `${window.location.origin}/pollinations/callback`;
-    const state = crypto.randomUUID();
-    sessionStorage.setItem("agt-pollinations-state", state);
-    const params = new URLSearchParams({
-      redirect_uri: redirectUri,
-      client_id: appKey,
-      scope: "usage",
-      state,
-    });
-    window.location.href = `https://enter.pollinations.ai/authorize?${params.toString()}`;
+
+    try {
+      const verifierBytes = new Uint8Array(32);
+      crypto.getRandomValues(verifierBytes);
+      const verifier = Array.from(verifierBytes, (b) => b.toString(16).padStart(2, "0")).join("");
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+      const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+
+      localStorage.setItem("agt-pollinations-app-key", appKey);
+      sessionStorage.setItem("agt-pollinations-pkce-verifier", verifier);
+      const state = crypto.randomUUID();
+      sessionStorage.setItem("agt-pollinations-state", state);
+
+      const redirectUri = `${window.location.origin}/pollinations/callback`;
+      const params = new URLSearchParams({
+        response_type: "code",
+        redirect_uri: redirectUri,
+        client_id: appKey,
+        scope: "usage",
+        state,
+        code_challenge: challenge,
+        code_challenge_method: "S256",
+      });
+      window.location.href = `https://enter.pollinations.ai/authorize?${params.toString()}`;
+    } catch {
+      setError("Pollinations bağlantısı başlatılamadı.");
+    }
   }
 
   async function generate() {
@@ -259,7 +276,7 @@ export default function ProductStudio() {
       </div>}
       {provider === "auto-free" && <p className="provider-help">🆓 Önce yapılandırılmış ComfyUI, sonra AI Horde denenir. AI Horde anahtarı opsiyoneldir.</p>}
       {provider === "aihorde" && <p className="provider-help">🌐 Anahtarsız kullanım ortak kuyruğa bağlıdır; hızlı üretim için Hızlı AI kullan.</p>}
-      {provider === "pollinations" && <p className="provider-help">⚡ Hızlı img2img. API key yazmak yerine kendi Pollen bakiyeni OAuth ile bağlarız. App Key ücretsizdir; üretim kullanımı senin onayladığın bütçeden düşer.</p>}
+      {provider === "pollinations" && <p className="provider-help">⚡ Hızlı img2img. Bir kez OAuth ile bağlan; üretim, Pollinations onayında belirlediğin kapsam/bütçe üzerinden çalışır.</p>}
       {provider === "cloudflare" && <p className="provider-help">Cloudflare img2img için Account ID + API Token gerekir.</p>}
     </section>
 

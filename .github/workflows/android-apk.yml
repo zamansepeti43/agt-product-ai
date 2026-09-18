@@ -1,81 +1,40 @@
 name: Android APK
-
 on:
   push:
     branches: [main]
-    paths:
-      - ".github/workflows/android-apk.yml"
-      - "android/**"
+    paths: [".github/workflows/android-apk.yml","android/**","mobile-dist/**"]
   workflow_dispatch:
-    inputs:
-      app_url:
-        description: "Web app URL to package"
-        required: false
-        default: "https://agt-product-ai.vercel.app"
-
-permissions:
-  contents: write
-
-env:
-  APP_URL: ${{ github.event.inputs.app_url || 'https://agt-product-ai.vercel.app' }}
-  APK_PASSWORD: agtproductai
-
+permissions: { contents: write }
+env: { APK_PASSWORD: agtproductai }
 jobs:
   build-apk:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.10.2"
-
-      - name: Build APK
-        working-directory: android
-        run: gradle assembleDebug -PappUrl="$APP_URL"
-
-      - name: Create signing key
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - name: Bundle standalone app
         run: |
-          keytool -genkeypair -v \
-            -keystore "$RUNNER_TEMP/agt-product-ai.keystore" \
-            -alias agtproductai \
-            -keyalg RSA -keysize 2048 \
-            -validity 10000 \
-            -storepass "$APK_PASSWORD" \
-            -keypass "$APK_PASSWORD" \
-            -dname "CN=AGT Product AI, OU=AGT Studio, O=AGT Studio, L=Istanbul, ST=Istanbul, C=TR"
-
-      - name: Sign and verify APK
+          rm -rf android/app/src/main/assets
+          mkdir -p android/app/src/main/assets/mobile-dist
+          cp mobile-dist/index.html mobile-dist/app.js mobile-dist/styles.css android/app/src/main/assets/mobile-dist/
+      - name: Build
+        working-directory: android
+        run: gradle assembleRelease
+      - name: Signing key
+        run: keytool -genkeypair -v -keystore "$RUNNER_TEMP/agt.keystore" -alias agtproductai -keyalg RSA -keysize 2048 -validity 10000 -storepass "$APK_PASSWORD" -keypass "$APK_PASSWORD" -dname "CN=AGT Product AI, O=AGT Studio, C=TR"
+      - name: Sign
         run: |
           mkdir -p dist
-          UNSIGNED="android/app/build/outputs/apk/debug/app-debug.apk"
-          SIGNED="dist/AGT-Product-AI.apk"
-          cp "$UNSIGNED" "$SIGNED"
-          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
-          "$APKSIGNER" sign --ks "$RUNNER_TEMP/agt-product-ai.keystore" --ks-key-alias agtproductai --ks-pass pass:"$APK_PASSWORD" --key-pass pass:"$APK_PASSWORD" --out "$SIGNED" "$UNSIGNED"
-          "$APKSIGNER" verify --verbose "$SIGNED"
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AGT-Product-AI-APK
-          path: dist/AGT-Product-AI.apk
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Publish APK release
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$RUNNER_TEMP/agt.keystore" --ks-key-alias agtproductai --ks-pass pass:"$APK_PASSWORD" --key-pass pass:"$APK_PASSWORD" --out dist/AGT-Product-AI.apk android/app/build/outputs/apk/release/app-release-unsigned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/AGT-Product-AI.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: AGT-Product-AI-APK, path: dist/AGT-Product-AI.apk, retention-days: 30 }
+      - name: Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ github.run_number }}
           name: AGT Product AI APK ${{ github.run_number }}
-          body: "AGT Product AI Android APK. Signed and verified automatically from main."
+          body: "Standalone AGT Product AI APK."
           files: dist/AGT-Product-AI.apk
           make_latest: true

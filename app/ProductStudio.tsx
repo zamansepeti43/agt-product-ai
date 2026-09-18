@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GENERATION_PRESETS } from "@/lib/ai/presets";
 import CatalogStudio from "./CatalogStudio";
 import type { GeneratedAsset, GenerationJob, ImageJobMode, ProviderConfig } from "@/lib/ai/types";
@@ -22,6 +22,7 @@ function previewUrl(url: string) { return url.startsWith("data:image/") ? url : 
 
 export default function ProductStudio() {
   const [files, setFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<ImageJobMode>("hero");
   const [count, setCount] = useState(1);
   const [prompt, setPrompt] = useState("");
@@ -133,10 +134,10 @@ export default function ProductStudio() {
         <h1>Ürün fotoğraflarını<br/><span>satış içeriğine dönüştür.</span></h1>
         <p>Tek fotoğraf veya 6 ürüne kadar yükle. Ürün kimliğini koruyarak e-ticaret, stüdyo, lifestyle, detay ve sosyal medya görselleri üret.</p>
       </div>
-      <label className="studio-upload">
-        <input hidden type="file" accept="image/jpeg,image/png,image/webp" multiple capture="environment" onChange={(e) => selectFiles(Array.from(e.target.files || []))} />
+      <div className="studio-upload" role="button" tabIndex={0} onClick={() => fileInputRef.current?.click()} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}>
+        <input ref={fileInputRef} className="upload-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple onClick={(e) => { e.currentTarget.value = ""; }} onChange={(e) => selectFiles(Array.from(e.target.files || []))} aria-label="Ürün fotoğrafı seç" />
         {files.length ? <div className="upload-selected"><div className="upload-check">✓</div><strong>{files.length} ürün görseli seçildi</strong><small>{files[0].name}{files.length > 1 ? ` + ${files.length - 1} ürün` : ""}</small><span>Değiştirmek için dokun</span></div> : <><div className="upload-icon">＋</div><strong>Ürün fotoğrafını yükle</strong><small>JPG, PNG veya WEBP · Maks. 12 MB / görsel</small><span className="upload-cta">Dosya seç</span></>}
-      </label>
+      </div>
     </section>
 
     <section className="studio-section">

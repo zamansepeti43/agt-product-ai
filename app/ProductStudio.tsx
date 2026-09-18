@@ -76,32 +76,98 @@ export default function ProductStudio() {
 
   async function generate() {
     if (!files.length || busy) return;
+    if (files.length !== 1) {
+      setError("AI Horde için tek ürün görseli seçmelisin.");
+      return;
+    }
     if (["gemini", "openai", "custom-openai"].includes(provider) && !apiKey.trim()) return setError("Bu provider için API anahtarı gerekli.");
     if (provider === "cloudflare" && (!apiKey.trim() || !accountId.trim())) return setError("Cloudflare için Account ID ve API Token gerekli.");
     if (["openai", "custom-openai"].includes(provider) && !model.trim()) return setError("Model adı gerekli.");
     if (provider === "custom-openai" && !baseUrl.trim()) return setError("Özel API Base URL gerekli.");
-    setBusy(true); setError(""); setAssets([]); setJob(null);
+
+    setBusy(true);
+    setError("");
+    setAssets([]);
+    setJob(null);
+
     try {
       const body = new FormData();
-      files.forEach((file) => body.append(files.length === 1 ? "image" : "images", file));
-      body.append("mode", mode); body.append("count", String(count)); body.append("prompt", prompt); body.append("provider", provider);
+      body.append("image", files[0]);
+      body.append("mode", mode);
+      body.append("count", String(count));
+      body.append("prompt", prompt);
+      body.append("provider", provider);
       if (apiKey.trim()) body.append("providerApiKey", apiKey.trim());
       if (model.trim()) body.append("providerModel", model.trim());
       if (baseUrl.trim()) body.append("providerBaseUrl", baseUrl.trim());
       if (accountId.trim()) body.append("providerAccountId", accountId.trim());
+
       const config: Record<string, ProviderConfig> = {};
       if ((provider === "auto-free" || provider === "aihorde") && apiKey.trim()) config.aihorde = { apiKey: apiKey.trim() };
       if (provider === "openai") config.openai = { apiKey: apiKey.trim(), model: model.trim(), baseUrl: baseUrl.trim() };
       if (provider === "cloudflare") config.cloudflare = { apiKey: apiKey.trim(), model: model.trim(), accountId: accountId.trim() };
       if (provider === "custom-openai") config["custom-openai"] = { apiKey: apiKey.trim(), model: model.trim(), baseUrl: baseUrl.trim() };
       if (Object.keys(config).length) body.append("providerConfigs", JSON.stringify(config));
+
+      // Free AI Horde must not keep a Vercel function open while community
+      // workers render the image. Submit once, then poll from the browser.
+      if (provider === "auto-free" || provider === "aihorde") {
+        const response = await fetch("/api/aihorde/generate", { method: "POST", body });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "AI Horde isteği oluşturulamadı.");
+
+        setJob(data.job);
+        const jobId = data.job?.id;
+        if (!jobId) throw new Error("AI Horde job ID alınamadı.");
+
+        const started = Date.now();
+        const timeout = 10 * 60 * 1000;
+        while (Date.now() - started < timeout) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+
+          const statusResponse = await fetch("/api/aihorde/status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: jobId, apiKey: apiKey.trim() }),
+          });
+          const status = await statusResponse.json();
+          if (!statusResponse.ok) throw new Error(status.error || "AI Horde durumu alınamadı.");
+
+          if (status.status === "processing") {
+            setJob((current) => current ? { ...current, message: status.queuePosition ? `AI Horde kuyruğunda bekliyor · sıra: ${status.queuePosition}` : "AI Horde görseli hazırlıyor…" } : current);
+            continue;
+          }
+
+          if (status.status === "failed") throw new Error(status.error || "AI Horde güvenli bir ürün görseli üretemedi.");
+
+          const resultAssets = Array.isArray(status.assets) ? status.assets.map((asset: any) => ({
+            id: String(asset.id),
+            url: String(asset.url),
+            mode,
+            width: 1024,
+            height: ["studio", "lifestyle", "detail", "social"].includes(mode) ? 1280 : 1024,
+          })) : [];
+
+          if (!resultAssets.length) throw new Error("AI Horde görsel döndürmedi.");
+          setAssets(resultAssets);
+          setJob((current) => current ? { ...current, status: "completed", provider: "aihorde", message: `${resultAssets.length} görsel üretildi. Kullanılan motor: aihorde.` } : current);
+          return;
+        }
+
+        throw new Error("AI Horde kuyruğu 10 dakika içinde tamamlanmadı. Lütfen tekrar dene.");
+      }
+
       const endpoint = files.length === 1 ? "/api/generate" : "/api/batch";
       const response = await fetch(endpoint, { method: "POST", body });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Üretim başarısız.");
-      setJob(data.job); setAssets(data.assets || []);
-    } catch (e) { setError(e instanceof Error ? e.message : "Beklenmeyen bir hata oluştu."); }
-    finally { setBusy(false); }
+      setJob(data.job);
+      setAssets(data.assets || []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Beklenmeyen bir hata oluştu.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function exportZip() {

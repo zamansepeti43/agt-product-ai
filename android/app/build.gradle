@@ -1,28 +1,7 @@
 plugins { id "com.android.application" }
-
-def appUrl = project.findProperty("appUrl") ?: "https://agt-product-ai.vercel.app"
-
-android {
-    namespace "com.agtstudio.productai"
-    compileSdk 35
-
-    defaultConfig {
-        applicationId "com.agtstudio.productai"
-        minSdk 24
-        targetSdk 35
-        versionCode 2
-        versionName "0.5.2"
-        buildConfigField "String", "APP_URL", "\"" + appUrl.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
-    }
-
-    buildFeatures {
-        buildConfig true
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            shrinkResources false
-        }
-    }
+android { namespace "com.agtstudio.productai"; compileSdk 35
+ defaultConfig { applicationId "com.agtstudio.productai"; minSdk 24; targetSdk 35; versionCode 3; versionName "1.0.0" }
+ buildFeatures { buildConfig true }
+ buildTypes { release { minifyEnabled false; shrinkResources false } }
 }
+dependencies { implementation "androidx.webkit:webkit:1.12.1" }

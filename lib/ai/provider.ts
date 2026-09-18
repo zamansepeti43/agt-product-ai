@@ -3,6 +3,7 @@ import { CloudflareImageProvider } from "./providers/cloudflare";
 import { ComfyUIProvider } from "./providers/comfyui";
 import { GeminiProvider } from "./providers/gemini";
 import { OpenAICompatibleImageProvider } from "./providers/openai-compatible";
+import { PollinationsImageProvider } from "./providers/pollinations";
 import { buildAutoFreeCandidates, generateWithFallback, type ProviderConfigMap } from "./router";
 import type { ImageProvider, ProductImageInput } from "./types";
 
@@ -13,6 +14,7 @@ const providers: Record<string, ImageProvider> = {
   gemini: new GeminiProvider(),
   openai: new OpenAICompatibleImageProvider(),
   "custom-openai": new OpenAICompatibleImageProvider(),
+  pollinations: new PollinationsImageProvider(),
 };
 export function getImageProvider(id?: string): ImageProvider | null { const providerId = (id || process.env.IMAGE_PROVIDER || "").trim().toLowerCase(); return providerId ? providers[providerId] ?? null : null; }
 export function configuredImageProviderId() { return (process.env.IMAGE_PROVIDER || "auto-free").trim().toLowerCase(); }

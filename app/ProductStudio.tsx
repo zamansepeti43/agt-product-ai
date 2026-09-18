@@ -146,7 +146,7 @@ export default function ProductStudio() {
 
     <section className="studio-section ai-section">
       <div className="section-title-row ai-title"><div><p className="studio-kicker">2 · AI MOTORU</p><h2>İstediğin yapay zekâyı bağla <button className="mini-help" aria-label="Bilgi">?</button></h2><p>Anahtarlar tarayıcıda saklanmaz; istek sırasında sunucuya iletilir.</p></div><button className="outline-button" onClick={openFinder}>🔎 API Finder <span>→</span></button></div>
-      <div className="provider-current" onClick={() => document.getElementById("provider-options")?.scrollIntoView({behavior:"smooth",block:"nearest"})}><span className="provider-icon">{selectedProvider.icon}</span><div><b>{selectedProvider.label}</b><small>{selectedProvider.note}</small></div><span className="chevron">⌄</span></div>
+      <select className="provider-mobile-select" value={provider} onChange={(e) => selectProvider(e.target.value as ProviderId)} aria-label="AI motoru seç">{providers.map((p) => <option key={p.id} value={p.id}>{p.icon} {p.label} — {p.note}</option>)}</select>
       <div id="provider-options" className="provider-options">{providers.map((p) => <button key={p.id} onClick={() => selectProvider(p.id)} className={`provider-option ${provider === p.id ? "is-selected" : ""}`}><strong>{p.icon} {p.label}</strong><small>{p.note}</small></button>)}</div>
       {provider !== "comfyui" && <div className="provider-fields">
         {provider === "cloudflare" && <input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Cloudflare Account ID" />}

@@ -9,7 +9,7 @@ export const maxDuration = 300;
 const MAX_FILE_SIZE = 12 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MODES = new Set<ImageJobMode>(["hero", "white", "studio", "lifestyle", "detail", "social"]);
-const PROVIDERS = new Set(["gemini", "comfyui", "aihorde", "cloudflare", "openai", "custom-openai", "auto-free"]);
+const PROVIDERS = new Set(["gemini", "comfyui", "aihorde", "pollinations", "cloudflare", "openai", "custom-openai", "auto-free"]);
 function readProviderConfig(formData: FormData) {
   const provider = String(formData.get("provider") || process.env.IMAGE_PROVIDER || "").trim().toLowerCase();
   const fallback: ProviderConfig = { apiKey: String(formData.get("providerApiKey") || "").trim().slice(0, 500), model: String(formData.get("providerModel") || "").trim().slice(0, 160), baseUrl: String(formData.get("providerBaseUrl") || "").trim().slice(0, 500), accountId: String(formData.get("providerAccountId") || "").trim().slice(0, 160) };

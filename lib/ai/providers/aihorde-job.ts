@@ -57,7 +57,7 @@ export async function buildHordeSubmission(args: {
   count: number;
   providerConfig?: ProviderConfig;
 }) {
-  const apiKey = args.providerConfig?.apiKey?.trim() || process.env.AIHORDE_API_KEY?.trim() || ANONYMOUS_KEY;
+  const apiKey = args.providerConfig?.apiKey?.trim() || ANONYMOUS_KEY;
   const model = args.providerConfig?.model?.trim() || process.env.AIHORDE_MODEL?.trim() || DEFAULT_MODEL;
   const width = 1024;
   const height = ["studio", "lifestyle", "detail", "social"].includes(args.mode) ? 1280 : 1024;
@@ -128,7 +128,7 @@ export async function buildHordeSubmission(args: {
 }
 
 export async function readHordeSubmission(id: string, apiKeyInput?: string) {
-  const apiKey = apiKeyInput?.trim() || process.env.AIHORDE_API_KEY?.trim() || ANONYMOUS_KEY;
+  const apiKey = apiKeyInput?.trim() || ANONYMOUS_KEY;
   const checkResponse = await fetch(`${BASE_URL}/check/${encodeURIComponent(id)}`, {
     headers: { apikey: apiKey },
     cache: "no-store",

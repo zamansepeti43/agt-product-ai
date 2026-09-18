@@ -142,14 +142,13 @@ export default function ProductStudio() {
       body.append("prompt", prompt);
       body.append("provider", provider);
       if (apiKey.trim()) body.append("providerApiKey", apiKey.trim());
-      if (provider === "pollinations" && pollinationsUserKey.trim()) body.set("providerApiKey", pollinationsUserKey.trim());
       if (model.trim()) body.append("providerModel", model.trim());
       if (baseUrl.trim()) body.append("providerBaseUrl", baseUrl.trim());
       if (accountId.trim()) body.append("providerAccountId", accountId.trim());
 
       const config: Record<string, ProviderConfig> = {};
       if ((provider === "auto-free" || provider === "aihorde") && apiKey.trim()) config.aihorde = { apiKey: apiKey.trim() };
-      if (provider === "pollinations") config.pollinations = { apiKey: pollinationsUserKey.trim(), model: model.trim() };
+      if (provider === "pollinations") config.pollinations = { model: model.trim() };
       if (provider === "openai") config.openai = { apiKey: apiKey.trim(), model: model.trim(), baseUrl: baseUrl.trim() };
       if (provider === "cloudflare") config.cloudflare = { apiKey: apiKey.trim(), model: model.trim(), accountId: accountId.trim() };
       if (provider === "custom-openai") config["custom-openai"] = { apiKey: apiKey.trim(), model: model.trim(), baseUrl: baseUrl.trim() };

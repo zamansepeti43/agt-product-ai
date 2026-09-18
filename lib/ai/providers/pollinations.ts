@@ -7,7 +7,7 @@ export class PollinationsImageProvider implements ImageProvider {
   readonly id = "pollinations";
 
   async generate(input: any): Promise<GeneratedAsset[]> {
-    const apiKey = input.providerConfig?.apiKey?.trim() || process.env.POLLINATIONS_API_KEY?.trim();
+    const apiKey = input.providerConfig?.apiKey?.trim() || "";
     if (!apiKey) throw new Error("Pollinations API Key gerekli. Hızlı üretim için API anahtarını bağla.");
 
     const model = input.providerConfig?.model?.trim() || process.env.POLLINATIONS_MODEL?.trim() || DEFAULT_MODEL;

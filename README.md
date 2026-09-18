@@ -2,6 +2,8 @@
 
 Mobile-first AI product studio for e-commerce creators.
 
+> Deployment pipeline: Vercel production is connected to the `main` branch.
+
 ## Current build — v0.5
 
 - responsive web/PWA product studio

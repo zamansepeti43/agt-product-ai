@@ -77,10 +77,9 @@ public class MainActivity extends Activity {
             }
 
             @Override
-            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                if (request.isForMainFrame()) {
-                    loading.setText("AGT Product AI\n\nYerel arayüz yüklenemedi.\nLütfen uygulamayı yeniden açın.");
-                }
+            @SuppressWarnings("deprecation")
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                loading.setText("AGT Product AI\\n\\nYerel arayüz yüklenemedi.\\nLütfen uygulamayı yeniden açın.");
             }
         });
 

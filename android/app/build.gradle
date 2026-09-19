@@ -1,4 +1,6 @@
 plugins { id "com.android.application" }
+def buildVersionCode = (project.findProperty("versionCode") ?: "41").toString().toInteger()
+def buildVersionName = (project.findProperty("versionName") ?: "1.0.41").toString()
 android {
  namespace "com.agtstudio.productai"
  compileSdk 35
@@ -6,8 +8,8 @@ android {
    applicationId "com.agtstudio.productai.test"
    minSdk 24
    targetSdk 35
-   versionCode 41
-   versionName "1.0.41"
+   versionCode buildVersionCode
+   versionName buildVersionName
  }
  buildFeatures { buildConfig true }
  buildTypes { release { minifyEnabled false; shrinkResources false } }

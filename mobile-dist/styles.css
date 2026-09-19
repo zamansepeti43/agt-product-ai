@@ -521,3 +521,19 @@
 .result-error{min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px 22px;border:1px solid rgba(255,120,150,.28);border-radius:22px;background:linear-gradient(180deg,rgba(45,18,35,.58),rgba(9,18,31,.9));box-sizing:border-box}.result-error-icon{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;margin-bottom:12px;background:rgba(255,85,125,.12);border:1px solid rgba(255,120,150,.35);color:#ff9ab2;font-weight:800;font-size:22px}.result-error strong{font-size:17px;color:#eef3ff}.result-error p{max-width:520px;margin:8px 0 5px;color:#c8d2e7;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}.result-error small{color:#8292ae;font-size:10px;line-height:1.45}.result-image-error{height:280px;display:grid;place-items:center;color:#8292ae;background:#08111f;border-radius:18px}.result-item img{background:#08111f;object-fit:contain}
 
 .ai-slot-wrap{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 38px;gap:7px;align-items:stretch}.ai-slot-wrap .ai-slot{width:100%!important}.ai-remove{width:38px;border:1px solid #294565;border-radius:14px;background:#0b1728;color:#8fa2c2;font-size:20px;cursor:pointer}.ai-remove:hover{border-color:#ff6f98;color:#ff9ab2;background:#21101d}.key-saved-note{display:block;margin:-3px 0 10px;color:#7f94b7;font-size:10px;line-height:1.45}
+
+/* AI connection sheet: keep provider picker fully visible on mobile WebView */
+.modal{overflow:hidden}
+.sheet{display:flex;flex-direction:column;min-height:0;height:min(90vh,760px);overflow:hidden}
+#sheetBody{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+.provider-grid{display:grid!important;visibility:visible!important;opacity:1!important}
+.provider-grid button{display:block!important;visibility:visible!important;opacity:1!important}
+.provider-form-host{display:block;min-height:0}
+@media(max-width:700px){
+  .modal{align-items:flex-end!important;padding:0!important;overflow:hidden!important}
+  .sheet{width:100%!important;height:min(88dvh,760px)!important;max-height:88dvh!important;margin-top:auto!important;border-radius:22px 22px 0 0!important;padding:18px 14px calc(18px + env(safe-area-inset-bottom))!important}
+  #sheetBody{padding-bottom:18px!important}
+  .provider-grid{grid-template-columns:1fr 1fr!important;gap:9px!important}
+  .provider-grid button{min-height:82px!important}
+}
+@media(max-width:430px){.provider-grid{grid-template-columns:1fr 1fr!important}.provider-grid button{min-height:78px!important}}

@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       }
     }
     if(!assets.length) throw new Error("Hiç görsel üretilemedi.");
+    if(assets.length<rawCount) throw new Error(`${assets.length}/${rawCount} farklı görsel üretilebildi. Eksik varyasyonları tamamlamak için tekrar dene.`);
     const providerUsed=effectiveProviderId==="auto-free" ? "auto-free" : effectiveProviderId;
     const message=""+assets.length+" farklı görsel üretildi.";
     return NextResponse.json({job:{...job,provider:providerUsed,status:"completed",message},assets,input:{fileName:file.name,mimeType:file.type,sizeBytes:file.size,count:rawCount,preset}});

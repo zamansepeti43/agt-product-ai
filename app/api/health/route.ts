@@ -9,7 +9,6 @@ export async function GET() {
   const provider = getImageProvider();
   const workflowConfigured = Boolean(process.env.COMFYUI_WORKFLOW_JSON);
   const baseUrlConfigured = Boolean(process.env.COMFYUI_BASE_URL);
-  const aiHordeConfigured = Boolean(process.env.AIHORDE_API_KEY);
   const autoFreeReady = workflowConfigured || availableImageProviders().includes("aihorde");
   const imageReady = providerId === "auto-free" ? autoFreeReady : Boolean(provider && (provider.id !== "comfyui" || workflowConfigured));
   return NextResponse.json({
@@ -28,6 +27,6 @@ export async function GET() {
       },
       background: process.env.BACKGROUND_PROVIDER || "not-configured",
     },
-    config: { comfyui: { baseUrlConfigured, workflowConfigured }, aihorde: { apiKeyConfigured: aiHordeConfigured, anonymousFallback: true } },
+    config: { comfyui: { baseUrlConfigured, workflowConfigured }, aihorde: { anonymousFallback: true } },
   }, { headers: { "Cache-Control": "no-store" } });
 }

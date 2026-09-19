@@ -1,8 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="512" android:viewportHeight="512">
-    <path android:fillColor="#07112F" android:pathData="M112,362 L226,116 C233,101 254,101 262,116 L355,318 L283,318 L238,218 L181,362 Z"/>
-    <path android:fillColor="#267BFF" android:pathData="M112,362 L226,116 C233,101 254,101 262,116 L307,214 L258,214 L238,173 L181,362 Z"/>
-    <path android:fillColor="#C43DFF" android:pathData="M239,246 L330,246 C354,246 374,259 385,281 L417,362 L347,362 L322,305 L239,305 Z"/>
-    <path android:fillColor="#D85CFF" android:pathData="M366,126 L373,148 L395,155 L373,162 L366,184 L359,162 L337,155 L359,148 Z"/>
-    <path android:fillColor="#5EE8FF" android:pathData="M414,170 L419,186 L435,191 L419,196 L414,212 L409,196 L393,191 L409,186 Z"/>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <!-- AGT Studio launcher background -->
+    <path
+        android:fillColor="#07112F"
+        android:pathData="M0,0h512v512h-512z"/>
+
+    <!-- AGT mark -->
+    <path
+        android:fillColor="#2477FF"
+        android:pathData="M112,362 L226,116 C233,101 254,101 262,116 L355,318 L283,318 L238,218 L181,362 Z"/>
+
+    <path
+        android:fillColor="#C43DFF"
+        android:pathData="M239,246 L330,246 C354,246 374,259 385,281 L417,362 L347,362 L322,305 L239,305 Z"/>
+
+    <path
+        android:fillColor="#D85CFF"
+        android:pathData="M366,126 L373,148 L395,155 L373,162 L366,184 L359,162 L337,155 L359,148 Z"/>
+
+    <path
+        android:fillColor="#5EE8FF"
+        android:pathData="M414,170 L419,186 L435,191 L419,196 L414,212 L409,196 L393,191 L409,186 Z"/>
 </vector>

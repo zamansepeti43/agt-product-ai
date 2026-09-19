@@ -267,3 +267,101 @@
     contain:paint;
   }
 }
+
+/* Final mobile hero composition: reference-style split scene */
+@media(max-width:700px){
+  .hero{
+    display:grid!important;
+    grid-template-columns:minmax(0,56%) minmax(0,44%)!important;
+    grid-template-rows:1fr!important;
+    min-height:360px!important;
+    height:360px!important;
+    padding:18px 0 8px!important;
+    gap:0!important;
+    overflow:visible!important;
+    position:relative!important;
+  }
+  .hero-copy{
+    grid-column:1!important;
+    grid-row:1!important;
+    width:auto!important;
+    min-height:0!important;
+    padding:4px 0 0!important;
+    z-index:5!important;
+  }
+  .hero h1{
+    font-size:clamp(42px,7.4vw,54px)!important;
+    line-height:.91!important;
+    letter-spacing:-3px!important;
+    max-width:390px!important;
+    margin:15px 0 14px!important;
+  }
+  .hero p{
+    max-width:330px!important;
+    font-size:13px!important;
+    line-height:1.45!important;
+  }
+  .hero-art{
+    grid-column:2!important;
+    grid-row:1!important;
+    position:relative!important;
+    top:auto!important;
+    right:auto!important;
+    width:calc(100% + 28px)!important;
+    height:300px!important;
+    margin:18px 0 0 -30px!important;
+    align-self:start!important;
+    border-radius:26px!important;
+    overflow:hidden!important;
+    z-index:2!important;
+    background-position:68% center!important;
+    box-shadow:0 18px 42px rgba(0,0,0,.34)!important;
+  }
+  .hero-art:after{
+    background:linear-gradient(90deg,#050812 0%,rgba(5,8,18,.64) 16%,rgba(5,8,18,.08) 62%,transparent 100%)!important;
+  }
+  .hero-art .orb{
+    width:220px!important;height:220px!important;
+    right:0!important;left:auto!important;top:25px!important;
+  }
+  .hero-note{
+    right:7%!important;
+    top:12%!important;
+    font-size:14px!important;
+  }
+  .benefit-card{
+    right:-2%!important;
+    bottom:5%!important;
+    min-width:150px!important;
+    font-size:9px!important;
+    padding:11px 13px!important;
+  }
+  .hero-copy .benefits{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:5px!important;
+    margin-top:14px!important;
+    position:relative!important;
+    z-index:7!important;
+  }
+  .hero-copy .benefits span{
+    font-size:7px!important;
+    padding:6px 7px!important;
+    white-space:nowrap!important;
+  }
+
+  /* Keep first viewport compact and predictable */
+  .upload-card{margin-top:2px!important}
+  .bottom-nav{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+}
+
+/* Avoid forced GPU layers on every component; they increase memory on WebView */
+.hero-art,.upload-card,.style-card,.prompt-card,.panel,.generate,.results-card,.bottom-nav{
+  transform:none!important;
+}
+@media(max-width:700px){
+  .hero-art,.upload-card,.style-card,.prompt-card,.panel,.generate,.results-card{
+    contain:layout paint;
+  }
+  .bottom-nav{contain:layout paint}
+}

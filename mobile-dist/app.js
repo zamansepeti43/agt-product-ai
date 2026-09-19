@@ -263,8 +263,61 @@ async function callProvider(s){
       return(d.data||[]).map(x=>({url:x.b64_json?'data:image/png;base64,'+x.b64_json:x.url}));
     }
     if(s.provider==='pollinations'){
-      const u='https://image.pollinations.ai/prompt/'+encodeURIComponent(p)+'?model='+encodeURIComponent(s.model||'flux')+'&width=768&height=768&nologo=true';
-      return[{url:u}];
+      if(!s.key)throw Error('Pollinations API anahtarı gerekli');
+      const modelMap={
+        'Qwen Image 3':'qwen/qwen-image-3',
+        'Qwen Image':'qwen/qwen-image',
+        'FLUX.1 Schnell':'black-forest-labs/flux.1-schnell',
+        'FLUX.2 Klein 4B':'black-forest-labs/flux.2-klein-4b',
+        'FLUX.1 Kontext Pro':'black-forest-labs/flux.1-kontext-pro',
+        'GPT Image 2':'openai/gpt-image-2',
+        'GPT Image 1.5':'openai/gpt-image-1.5',
+        'GPT Image 1 Mini':'openai/gpt-image-1-mini',
+        'Grok Imagine':'x-ai/grok-imagine-image',
+        'Grok Imagine Image 2.0':'x-ai/grok-imagine-image-2.0',
+        'Grok Imagine Pro':'x-ai/grok-imagine-image-quality',
+        'Ideogram 4.0 Balanced':'ideogram-ai/ideogram-v4-balanced',
+        'Ideogram 4.0 Quality':'ideogram-ai/ideogram-v4-quality',
+        'Ideogram 4.0 Turbo':'ideogram-ai/ideogram-v4-turbo',
+        'Krea 2':'krea/krea-2-medium',
+        'Nano Banana':'google/gemini-2.5-flash-image',
+        'Nano Banana 2':'google/gemini-3.1-flash-image',
+        'Nano Banana 2 Lite':'google/gemini-3.1-flash-lite-image',
+        'Nano Banana Pro':'google/gemini-3-pro-image',
+        'Recraft V4.1':'recraft/recraft-v4.1-vector',
+        'Seedream 4.0':'bytedance/seedream-4.0',
+        'Seedream 4.5':'bytedance/seedream-4.5',
+        'Seedream 5.0 Lite':'bytedance/seedream-5.0-lite',
+        'Seedream 5.0 Pro':'bytedance/seedream-5.0-pro',
+        'Wan 2.7 Image':'alibaba/wan-2.7-image',
+        'Wan 2.7 Image Pro':'alibaba/wan-2.7-image-pro',
+        'Z-Image Turbo':'tongyi-mai/z-image-turbo',
+        'Lucid Origin':'leonardo/lucid-origin',
+        'Pruna p-image':'prunaai/p-image',
+        'Pruna p-image-edit':'prunaai/p-image-edit'
+      };
+      const model=modelMap[s.model]||s.model||'qwen/qwen-image-3';
+      const size=state.ratio==='4:5'?'1024x1280':'1024x1024';
+      const fd=new FormData();
+      fd.append('image',state.file,state.file.name||'product.png');
+      fd.append('prompt',p);
+      fd.append('model',model);
+      fd.append('n','1');
+      fd.append('size',size);
+      fd.append('quality','high');
+      fd.append('response_format','url');
+      const r=await fetch('https://gen.pollinations.ai/v1/images/edits',{
+        method:'POST',
+        headers:{Authorization:'Bearer '+s.key},
+        body:fd
+      });
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok)throw Error(d?.error?.message||d?.error||('Pollinations API hatası ('+r.status+')'));
+      const item=d?.data?.[0];
+      if(!item)throw Error('Pollinations görsel döndürmedi');
+      if(item.url)return[{url:item.url}];
+      if(item.b64_json)return[{url:'data:image/png;base64,'+item.b64_json}];
+      throw Error('Pollinations sonuç formatı tanınmadı');
     }
     if(s.provider==='aihorde'){
       const source=sourceData;

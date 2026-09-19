@@ -310,7 +310,7 @@ export default function ProductStudio() {
     <section className="studio-section production-section">
       <div className="section-title-row"><div><p className="studio-kicker">3 · ÜRETİM AYARLARI</p><h2>Son ayarlar</h2></div></div>
       <div className="production-grid">
-        <label><span>Görsel sayısı</span><select value={count} onChange={(e) => setCount(Number(e.target.value))}>{[1,2,3,4].map((n) => <option key={n}>{n}</option>)}</select></label>
+        <label><span>Görsel sayısı</span><select value={count} onChange={(e) => setCount(Number(e.target.value))}>{Array.from({ length: 10 }, (_, i) => i + 1).map((n) => <option key={n}>{n}</option>)}</select></label>
         <label><span>Görsel oranı</span><select defaultValue="1:1"><option>1:1</option><option>4:5</option><option>16:9</option><option>9:16</option></select></label>
       </div>
       <label className="prompt-box"><span>✎</span><div><b>Ek talimat <small>(opsiyonel)</small></b><textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={1200} rows={2} placeholder="Örn. beyaz arka plan, doğal ışık, minimal tarz…" /></div></label>

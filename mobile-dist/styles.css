@@ -32,3 +32,21 @@
   .style-card strong{font-size:24px}
   .style-card span{font-size:8px}
 }
+
+/* Mobile performance pass */
+@media(max-width:700px){
+  *{scroll-behavior:auto!important}
+  .app-shell{background:#050812}
+  .topbar,.bottom-nav,.modal,.benefit-card{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .topbar{background:#050812}
+  .bottom-nav{background:#050b15}
+  .modal{background:rgba(0,0,0,.88)}
+  .benefit-card{background:#12152a}
+  .hero-art{box-shadow:0 12px 30px rgba(0,0,0,.28),0 0 35px rgba(164,45,255,.08)}
+  .hero-art .orb{box-shadow:0 0 28px rgba(255,61,200,.12)}
+  .style-card,.panel,.prompt-card,.upload-card,.results-card{box-shadow:none!important}
+  .style-card{transition:none!important}
+  .generate{box-shadow:0 8px 22px rgba(78,32,201,.24)}
+  .two-col{contain:layout paint}
+  .prompt-card,.two-col,.generate,.results-card{content-visibility:auto;contain-intrinsic-size:0 180px}
+}

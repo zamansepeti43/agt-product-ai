@@ -16,28 +16,22 @@ export async function GET() {
     },
   });
 
-  if (!upstream.ok || !upstream.body) {
+  if (!upstream.ok) {
     return NextResponse.json(
       { error: "APK indirilemedi", status: upstream.status },
       { status: 502 }
     );
   }
 
+  const bytes = await upstream.arrayBuffer();
+
   const headers = new Headers();
-  headers.set(
-    "Content-Type",
-    upstream.headers.get("content-type") || "application/vnd.android.package-archive"
-  );
-  headers.set(
-    "Content-Length",
-    upstream.headers.get("content-length") || "1170635"
-  );
-  headers.set(
-    "Content-Disposition",
-    'attachment; filename="AGT-Product-AI.apk"'
-  );
+  headers.set("Content-Type", "application/vnd.android.package-archive");
+  headers.set("Content-Length", String(bytes.byteLength));
+  headers.set("Content-Disposition", 'attachment; filename="AGT-Product-AI.apk"');
   headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
   headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Accept-Ranges", "bytes");
 
-  return new Response(upstream.body, { status: 200, headers });
+  return new Response(bytes, { status: 200, headers });
 }

@@ -51,7 +51,8 @@ public class MainActivity extends Activity {
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(8, 10, 15));
-        webView.setVisibility(View.INVISIBLE);
+        webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        webView.setVisibility(View.VISIBLE);
 
         WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))

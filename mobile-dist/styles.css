@@ -365,3 +365,41 @@
   }
   .bottom-nav{contain:layout paint}
 }
+
+/* Final mobile hero cleanup + jank reduction */
+.hero-art .orb{display:none!important}
+.hero-art{background-image:linear-gradient(90deg,rgba(5,8,18,.34),rgba(5,8,18,.06)),url("https://www.cronista.com/resizer/v2/CEONMQUS3BDHJHFZFFXXUEQP6E.png?auth=5a4f89b3a4556c1ef1a0a38cc04dbe78c7c71642d003eb61a11f5b8d9cca6e21&focal=991%2C505&height=660&quality=70&width=990")!important}
+.hero-note{
+  right:4%!important;
+  top:8%!important;
+  max-width:112px;
+  text-align:right;
+  font-size:15px!important;
+  line-height:1.15!important;
+  z-index:6!important;
+}
+.benefit-card{
+  right:4%!important;
+  bottom:5%!important;
+  transform:none!important;
+  max-width:154px;
+  padding:10px 12px!important;
+  font-size:9px!important;
+  line-height:1.25!important;
+  z-index:6!important;
+}
+.hero-art:after{
+  background:linear-gradient(90deg,rgba(5,8,18,.42) 0%,rgba(5,8,18,.08) 52%,rgba(5,8,18,.02) 100%)!important;
+}
+@media(max-width:700px){
+  .hero-art{
+    background-position:72% center!important;
+    box-shadow:0 10px 24px rgba(0,0,0,.25)!important;
+    contain:layout paint;
+  }
+  .hero-note{right:4%!important;top:9%!important;max-width:96px;font-size:13px!important}
+  .benefit-card{right:3%!important;bottom:4%!important;max-width:145px;padding:9px 10px!important;font-size:8px!important}
+  .benefit-card{box-shadow:none!important}
+  .hero-art:after{background:linear-gradient(90deg,rgba(5,8,18,.38),rgba(5,8,18,.04) 58%,transparent)!important}
+  *,:before,:after{scroll-behavior:auto!important}
+}

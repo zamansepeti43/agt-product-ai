@@ -516,3 +516,6 @@
   .library-action{width:32px!important;height:32px!important}
   .result-actions{grid-template-columns:1fr 44px!important}
 }
+
+/* Result/error states */
+.result-error{min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px 22px;border:1px solid rgba(255,120,150,.28);border-radius:22px;background:linear-gradient(180deg,rgba(45,18,35,.58),rgba(9,18,31,.9));box-sizing:border-box}.result-error-icon{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;margin-bottom:12px;background:rgba(255,85,125,.12);border:1px solid rgba(255,120,150,.35);color:#ff9ab2;font-weight:800;font-size:22px}.result-error strong{font-size:17px;color:#eef3ff}.result-error p{max-width:520px;margin:8px 0 5px;color:#c8d2e7;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}.result-error small{color:#8292ae;font-size:10px;line-height:1.45}.result-image-error{height:280px;display:grid;place-items:center;color:#8292ae;background:#08111f;border-radius:18px}.result-item img{background:#08111f;object-fit:contain}

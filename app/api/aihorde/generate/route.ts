@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     if (file.size === 0 || file.size > MAX_FILE_SIZE) return NextResponse.json({ error: "Görsel 12 MB'dan küçük olmalı." }, { status: 413 });
 
     const mode = String(form.get("mode") || "hero") as ImageJobMode;
-    const count = Math.min(4, Math.max(1, Number(form.get("count") || 1)));
+    const count = Math.min(10, Math.max(1, Number(form.get("count") || 1)));
     if (!MODES.has(mode) || !Number.isInteger(count)) return NextResponse.json({ error: "Geçersiz üretim ayarı." }, { status: 400 });
 
     const prompt = String(form.get("prompt") || "").trim().slice(0, 1200);

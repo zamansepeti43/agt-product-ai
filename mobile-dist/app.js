@@ -170,8 +170,8 @@ async function callProvider(s){
     throw Error('Desteklenmeyen AI motoru');
   };
   const results=[];
-  for(let start=0;start<total;start+=5){
-    const batch=await Promise.allSettled(Array.from({length:Math.min(5,total-start)},(_,j)=>runOne(start+j)));
+  for(let start=0;start<total;start+=3){
+    const batch=await Promise.allSettled(Array.from({length:Math.min(3,total-start)},(_,j)=>runOne(start+j)));
     for(const item of batch){if(item.status==='fulfilled')results.push(...item.value);}
   }
   if(results.length<total)throw Error(results.length+'/'+total+' farklı görsel üretilebildi.');

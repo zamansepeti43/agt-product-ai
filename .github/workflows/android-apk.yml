@@ -17,7 +17,7 @@ jobs:
         run: |
           rm -rf android/app/src/main/assets
           mkdir -p android/app/src/main/assets
-          cp mobile-dist/index.html mobile-dist/app.js mobile-dist/styles.css android/app/src/main/assets/
+          cp mobile-dist/index.html mobile-dist/app.js mobile-dist/styles.css mobile-dist/agt-icon.svg android/app/src/main/assets/
       - name: Build
         working-directory: android
         run: gradle assembleDebug

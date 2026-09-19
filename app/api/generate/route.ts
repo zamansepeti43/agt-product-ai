@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       if (providerId !== "aihorde" && !stored.apiKey) return NextResponse.json({error:"Bu AI provider bağlı değil. Önce API anahtarını bağla."},{status:401});
     }
     const mode=rawMode as ImageJobMode; const preset=getPreset(mode); const effectiveProviderId=providerId||configuredImageProviderId(); const hasStrategy=effectiveProviderId==="auto-free"||Boolean(effectiveProviderId); const prompt=getVariationPrompt(mode,0,customPrompt);
-    const job:GenerationJob={id:randomUUID(),status:hasStrategy?"processing":"queued",mode,provider:effectiveProviderId||"not-configured",createdAt:new Date().toISOString(),message:hasStrategy?"\${preset.label} üretimi başlatıldı.":"Görsel doğrulandı. AI provider bağlantısı bekleniyor."};
+    const job:GenerationJob={id:randomUUID(),status:hasStrategy?"processing":"queued",mode,provider:effectiveProviderId||"not-configured",createdAt:new Date().toISOString(),message:hasStrategy?`${preset.label} üretimi başlatıldı.`:"Görsel doğrulandı. AI provider bağlantısı bekleniyor."};
     if(!hasStrategy) return NextResponse.json({job,input:{fileName:file.name,mimeType:file.type,sizeBytes:file.size,count:rawCount,preset}},{status:202});
     const height=["studio","lifestyle","detail","social"].includes(mode)?1280:1024;
     const indexes=Array.from({length:rawCount},(_,i)=>i);

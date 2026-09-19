@@ -526,9 +526,8 @@
 .modal{overflow:hidden}
 .sheet{display:flex;flex-direction:column;min-height:0;height:min(90vh,760px);overflow:hidden}
 #sheetBody{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:8px;-webkit-overflow-scrolling:touch}
-.provider-grid{display:grid;visibility:visible!important;opacity:1!important}.provider-grid.is-hidden{display:none!important}
-.provider-grid button{display:block!important;visibility:visible!important;opacity:1!important}
-.provider-form-host{display:block;min-height:0}
+.provider-grid{display:grid;visibility:visible!important;opacity:1!important}.provider-grid.is-hidden,.provider-grid[hidden]{display:none!important}.provider-grid button{display:block!important;visibility:visible!important;opacity:1!important}
+.provider-form-host{display:block;min-height:0}.provider-form-host[hidden]{display:none!important}
 @media(max-width:700px){
   .modal{align-items:flex-end!important;padding:0!important;overflow:hidden!important}
   .sheet{width:100%!important;height:min(88dvh,760px)!important;max-height:88dvh!important;margin-top:auto!important;border-radius:22px 22px 0 0!important;padding:18px 14px calc(18px + env(safe-area-inset-bottom))!important}

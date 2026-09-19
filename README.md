@@ -1,108 +1,91 @@
 # AGT Product AI
 
-Mobile-first AI product studio for e-commerce creators.
+AGT Studio için bağımsız, mobile-first AI ürün görsel stüdyosu.
 
-> Deployment: Netlify production is intended for the hosted web app; the repository remains portable and does not require Vercel.
+## Bağımsız uygulama mimarisi
 
-## Current build — v0.5
+Uygulama **Netlify, Vercel veya başka bir hosted frontend adresine bağlı değildir.**
 
-- responsive web/PWA product studio
-- mobile camera/gallery input
-- JPG / PNG / WEBP validation
-- 12 MB per-image and 48 MB batch upload guards
-- six commercial image presets
-- 1–4 outputs per product
-- single-product and up-to-6-product batch generation
-- configurable ComfyUI / Qwen Image Edit workflow integration
-- same-origin ComfyUI asset proxy
-- server-side ZIP export for generated assets
-- deterministic Turkish/English catalog title, description, tags and SEO keyword generation
-- Windows Tauri 2 shell configuration
-- GitHub Actions Windows installer workflow
+- **Android:** yerel WebView + APK
+- **Windows:** Tauri 2 + yerel `mobile-dist`
+- **Web geliştirme:** Next.js geliştirme sunucusu
+- **AI:** kullanıcının bağladığı sağlayıcılar üzerinden doğrudan bağlantı
+- **Kimlik bilgileri:** cihazdaki güvenli depolama / HttpOnly server oturumu kullanan ilgili akışlar
+- **GitHub Actions:** yalnızca build/release otomasyonu
 
-## Product vision
+Dağıtım için zorunlu bir Netlify/Vercel URL'si veya hosted APK proxy'si yoktur.
 
-One product photo in → a complete commercial content pack out:
+## Desteklenen AI bağlantıları
 
-- marketplace hero image
-- white-background product image
-- studio scene
-- lifestyle scene
-- detail images
-- social-media formats
-- product title, description and SEO copy
-- batch generation
-- ZIP export
-- Windows desktop app
-- product video
+- Pollinations
+- AI Horde
+- Puter AI
+- Google Gemini
+- OpenAI
+- Cloudflare AI
+- Özel OpenAI API
+- OpenAI uyumlu / Özel API
+- Yerel ComfyUI (Windows/masaüstü)
 
-## Architecture
+> Not: Uygulamanın bağımsız olması, AI servislerinin internet üzerinden kullanılmasını engellemez. Kullanıcı hangi sağlayıcıyı bağlarsa üretim o sağlayıcının API/servis koşullarına göre çalışır. Yerel ComfyUI ise masaüstünde doğrudan yerel ağa bağlanabilir.
 
-```text
-Phone / Browser / Tauri
-          |
-          v
-      Next.js UI
-          |
-          +-- /api/generate ---- image provider ---- ComfyUI / Qwen workflow
-          +-- /api/batch -------- same provider pipeline
-          +-- /api/asset -------- safe provider image delivery
-          +-- /api/catalog ------ catalog + SEO copy
-          +-- /api/export/zip --- validated assets -> ZIP
-          |
-          +-- src-tauri -------- Windows hosted-app shell
-```
+## Ürün özellikleri
 
-## Catalog / SEO
+- Ürün fotoğrafı yükleme
+- JPG / PNG / WEBP
+- 12 MB görsel sınırı
+- Ticari görsel presetleri
+- Hero / marketplace / studio / lifestyle / detail / social sahneleri
+- Ürün kimliği ve geometriyi koruyan akıllı prompt sistemi
+- 1–10 görsel üretimi
+- Batch üretim
+- Model seçimi ve sağlayıcı yönetimi
+- Türkçe / English arayüz
+- Geçmiş ve favoriler
+- ZIP/export akışları
+- Android APK
+- Windows MSI / NSIS
 
-`POST /api/catalog` accepts product name, category, optional brand, keywords, marketplace and language. It returns structured title, short description, description, tags and SEO keywords. The current generator is deterministic and does not invent product facts; it is a fallback that can later be paired with an LLM provider.
+## Güvenlik
 
-## Windows desktop
+Kullanıcının API anahtarları kaynak koda, GitHub'a veya APK içine sabitlenmez. Sağlayıcı anahtarları cihaz tarafındaki güvenli depolama ve mevcut provider-session mimarisi üzerinden yönetilir.
 
-`src-tauri` contains a Tauri 2 native shell. The installer packages a small local launcher that opens the configured hosted AGT Product AI deployment, so the desktop client and web/PWA client share the same UI and server-side AI pipeline.
+Model ağırlıkları, özel workflow dosyaları ve üçüncü taraf lisanslı varlıklar uygulamaya gömülmez.
 
-For manual Windows builds, the GitHub Actions workflow requires an `app_url` input. Version-tag builds use the repository variable `AGT_PRODUCT_AI_URL`. The URL must be `http://` or `https://` and must point to the deployed AGT Product AI application.
-
-The repository does not embed private API keys, ComfyUI credentials, model weights or third-party workflow files in the desktop bundle.
-
-## ComfyUI connection
-
-Copy `.env.example` to `.env.local` and configure:
-
-```env
-IMAGE_PROVIDER=comfyui
-COMFYUI_BASE_URL=http://127.0.0.1:8188
-COMFYUI_TIMEOUT_MS=180000
-COMFYUI_WORKFLOW_JSON={...}
-```
-
-Export the production workflow from ComfyUI in API format. The adapter replaces:
-
-- `__IMAGE__`
-- `__PROMPT__`
-- `__WIDTH__`
-- `__HEIGHT__`
-
-The repository does not bundle model weights or third-party workflow files. Review licenses for models, workflows, LoRAs, custom nodes and generated assets separately before commercial distribution.
-
-## Development
+## Geliştirme
 
 ```bash
 npm install
 npm run dev
 ```
 
-Validation:
+Doğrulama:
 
 ```bash
 npm run typecheck
 npm run build
 ```
 
-## Roadmap
+## Android
 
-1. Catalog copy-to-clipboard / export package
-2. Windows Tauri installer validation against the hosted frontend
-3. Optional persistent job history
-4. Generated-image QA checks
-5. Product video pipeline
+Android build'i GitHub Actions üzerinden oluşturulur. APK sürümleri GitHub Releases'a artifact olarak yayınlanır.
+
+Android uygulaması `mobile-dist` içeriğini yerel olarak paketler; çalışmak için AGT'nin hosted web sitesine ihtiyaç duymaz.
+
+## Windows
+
+`src-tauri` Tauri 2 native shell'idir ve doğrudan `mobile-dist` klasörünü paketler. Hosted frontend URL'si gerektirmez.
+
+## ComfyUI
+
+ComfyUI masaüstünde yerel olarak kullanılabilir:
+
+```text
+http://127.0.0.1:8188
+```
+
+Mobil Android cihaz, bilgisayardaki localhost'a otomatik olarak erişemez; bu nedenle ComfyUI bağlantısı masaüstü kullanımına özeldir.
+
+## Ticari dağıtım
+
+Üçüncü taraf AI sağlayıcılarının API, model, workflow, LoRA, custom node ve oluşturulan içerik lisansları ayrıca kontrol edilmelidir. AGT Product AI bu varlıkları otomatik olarak uygulamaya gömmez.

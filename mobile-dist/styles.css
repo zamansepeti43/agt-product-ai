@@ -403,3 +403,81 @@
   .hero-art:after{background:linear-gradient(90deg,rgba(5,8,18,.38),rgba(5,8,18,.04) 58%,transparent)!important}
   *,:before,:after{scroll-behavior:auto!important}
 }
+
+/* Final Android/WebView performance + clean hero */
+.hero-art .orb,.hero-note,.benefit-card{display:none!important}
+.hero-art{
+  background-image:linear-gradient(90deg,rgba(5,8,18,.46),rgba(5,8,18,.08)),
+    url("https://www.cronista.com/resizer/v2/CEONMQUS3BDHJHFZFFXXUEQP6E.png?auth=5a4f89b3a4556c1ef1a0a38cc04dbe78c7c71642d003eb61a11f5b8d9cca6e21&focal=991%2C505&height=660&quality=70&width=990")!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+}
+.hero-title-line{display:inline!important}
+@media(max-width:700px){
+  .hero{
+    display:grid!important;
+    grid-template-columns:54% 46%!important;
+    min-height:335px!important;
+    height:335px!important;
+    padding:16px 0 4px!important;
+    overflow:hidden!important;
+    align-items:start!important;
+  }
+  .hero-copy{
+    width:auto!important;
+    min-height:0!important;
+    padding-top:4px!important;
+    z-index:5!important;
+  }
+  .hero h1{
+    font-size:41px!important;
+    line-height:.94!important;
+    letter-spacing:-2.6px!important;
+    margin:14px 0 14px!important;
+    max-width:100%!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+  .hero p{
+    max-width:195px!important;
+    font-size:11.5px!important;
+    line-height:1.42!important;
+  }
+  .hero-copy .benefits{
+    margin-top:12px!important;
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:4px!important;
+    max-width:215px!important;
+  }
+  .hero-copy .benefits span{
+    font-size:6.5px!important;
+    padding:5px 6px!important;
+  }
+  .hero-art{
+    grid-column:2!important;
+    grid-row:1!important;
+    position:relative!important;
+    top:auto!important;
+    right:auto!important;
+    width:calc(100% + 10px)!important;
+    height:300px!important;
+    margin:10px 0 0 -4px!important;
+    border-radius:25px!important;
+    background-position:74% center!important;
+    box-shadow:0 9px 24px rgba(0,0,0,.24)!important;
+    z-index:2!important;
+    contain:none!important;
+  }
+  .hero-art:after{
+    background:linear-gradient(90deg,rgba(5,8,18,.58),rgba(5,8,18,.13) 48%,transparent 100%)!important;
+  }
+  .hero-product-scene{
+    background:linear-gradient(90deg,rgba(5,8,18,.12),transparent 62%)!important;
+  }
+  .upload-card{margin-top:10px!important}
+  .prompt-card,.two-col,.generate,.results-card{
+    content-visibility:visible!important;
+    contain:none!important;
+  }
+}

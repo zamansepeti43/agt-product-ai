@@ -5,3 +5,6 @@
 .brand-mark{width:42px;height:42px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:13px}.brand-mark img{width:100%;height:100%;display:block;object-fit:cover}.brand-mark+div strong{letter-spacing:-.02em}
 
 .model-picker{display:flex;gap:8px;align-items:center}.model-picker select{flex:1;min-width:0}.model-picker button{width:44px;height:44px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:#111936;color:#fff;font-size:20px}.form label>small{display:block;margin-top:6px;opacity:.65}
+
+.brand-mark{position:relative;background:linear-gradient(135deg,#eef2ff,#b9c9ff);color:#07101f;font-weight:950;font-size:13px;letter-spacing:-1px}.brand-mark span{display:block;line-height:1}.hero-product-photo{position:relative;width:150px;height:220px;object-fit:cover;object-position:center;border-radius:24px;box-shadow:0 18px 55px rgba(0,0,0,.45),0 0 42px rgba(255,61,200,.22);filter:saturate(1.05) contrast(1.03)}
+@media(max-width:700px){.hero-product-photo{width:102px;height:148px;border-radius:18px}.topbar,.bottom-nav{backdrop-filter:none;-webkit-backdrop-filter:none}.modal{backdrop-filter:none;-webkit-backdrop-filter:none}}

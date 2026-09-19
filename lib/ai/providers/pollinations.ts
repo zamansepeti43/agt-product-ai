@@ -48,9 +48,28 @@ export class PollinationsImageProvider implements ImageProvider {
       const item = data?.data?.[0];
       if (!item?.b64_json && !item?.url) throw new Error("Pollinations görsel döndürmedi.");
 
+      let imageUrl = "";
+      if (item.b64_json) {
+        imageUrl = `data:image/png;base64,${item.b64_json}`;
+      } else {
+        const rawUrl = String(item.url || "");
+        let parsed: URL;
+        try { parsed = new URL(rawUrl); } catch { throw new Error("Pollinations geçerli bir görsel URL'si döndürmedi."); }
+        if (parsed.protocol !== "https:" || !(parsed.hostname === "pollinations.ai" || parsed.hostname.endsWith(".pollinations.ai"))) {
+          throw new Error("Pollinations görsel bağlantısı güvenli bir Pollinations adresi olmalı.");
+        }
+        const imageResponse = await fetch(parsed, { redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(30_000) });
+        if (imageResponse.status >= 300 && imageResponse.status < 400) throw new Error("Pollinations görsel bağlantısı redirect ediyor.");
+        if (!imageResponse.ok) throw new Error(`Pollinations görseli alınamadı (${imageResponse.status}).`);
+        const contentType = (imageResponse.headers.get("content-type") || "").split(";")[0].toLowerCase();
+        if (!["image/png","image/jpeg","image/webp"].includes(contentType)) throw new Error("Pollinations geçerli bir görsel döndürmedi.");
+        const bytes = await imageResponse.arrayBuffer();
+        if (!bytes.byteLength || bytes.byteLength > 12 * 1024 * 1024) throw new Error("Pollinations görseli 12 MB sınırını aşıyor.");
+        imageUrl = `data:${contentType};base64,${Buffer.from(bytes).toString("base64")}`;
+      }
       assets.push({
         id: `pollinations-${Date.now()}-${i}`,
-        url: item.b64_json ? `data:image/png;base64,${item.b64_json}` : String(item.url),
+        url: imageUrl,
         mode: input.mode,
         width,
         height,

@@ -348,11 +348,19 @@ async function callProvider(s){
     throw Error('Desteklenmeyen AI motoru');
   };
   const results=[];
+  let lastError="";
   for(let start=0;start<total;start+=3){
     const batch=await Promise.allSettled(Array.from({length:Math.min(3,total-start)},(_,j)=>runOne(start+j)));
-    for(const item of batch){if(item.status==='fulfilled')results.push(...item.value);}
+    for(const item of batch){
+      if(item.status==='fulfilled')results.push(...item.value);
+      else lastError=item.reason?.message||String(item.reason||"AI motoru görsel üretemedi.");
+    }
   }
-  if(results.length<total)throw Error(results.length+'/'+total+' farklı görsel üretilebildi.');
+  results.__lastError=lastError;
+  if(results.length<total){
+    const detail=results.__lastError||"AI motoru görsel üretemedi.";
+    throw Error(detail);
+  }
   return results;
 }
 function wait(ms){return new Promise(r=>setTimeout(r,ms))}

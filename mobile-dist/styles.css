@@ -8,3 +8,27 @@
 
 .brand-mark{position:relative;background:linear-gradient(135deg,#eef2ff,#b9c9ff);color:#07101f;font-weight:950;font-size:13px;letter-spacing:-1px}.brand-mark span{display:block;line-height:1}.hero-product-photo{position:relative;width:150px;height:220px;object-fit:cover;object-position:center;border-radius:24px;box-shadow:0 18px 55px rgba(0,0,0,.45),0 0 42px rgba(255,61,200,.22);filter:saturate(1.05) contrast(1.03)}
 @media(max-width:700px){.hero-product-photo{width:102px;height:148px;border-radius:18px}.topbar,.bottom-nav{backdrop-filter:none;-webkit-backdrop-filter:none}.modal{backdrop-filter:none;-webkit-backdrop-filter:none}}
+
+/* Premium scene hero: full photographic set, no cutout/crop */
+.hero-art{border-radius:28px;background-image:linear-gradient(90deg,rgba(5,8,18,.22),rgba(5,8,18,.04)),url("https://www.cronista.com/resizer/v2/CEONMQUS3BDHJHFZFFXXUEQP6E.png?auth=5a4f89b3a4556c1ef1a0a38cc04dbe78c7c71642d003eb61a11f5b8d9cca6e21&focal=991%2C505&height=660&quality=70&width=990");background-size:cover;background-position:center;border:1px solid rgba(255,255,255,.06);box-shadow:0 22px 60px rgba(0,0,0,.35),0 0 70px rgba(164,45,255,.12)}
+.hero-art .orb{width:82%;height:82%;border:1px solid rgba(255,78,203,.42);box-shadow:0 0 55px rgba(255,61,200,.18),0 0 110px rgba(108,40,255,.12);pointer-events:none}
+.hero-product-scene{display:block;position:absolute;inset:0;background:radial-gradient(circle at 72% 48%,rgba(255,63,203,.18),transparent 30%),linear-gradient(90deg,rgba(5,8,18,.48),transparent 55%,rgba(5,8,18,.12));pointer-events:none}
+.hero-note{z-index:3;text-shadow:0 2px 12px #000}
+.benefit-card{z-index:4;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(10,10,28,.76)}
+/* Style selector: one clean horizontal rail, equal cards, no awkward wrapping */
+.styles-row{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:2px 2px 7px;margin:14px 0;scrollbar-width:none}
+.styles-row::-webkit-scrollbar{display:none}
+.style-card{flex:1 0 118px;min-width:118px;min-height:108px;border-radius:18px;border:1px solid rgba(70,94,130,.58);background:linear-gradient(160deg,#0b1728,#07101d);box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 8px 22px rgba(0,0,0,.16);transition:transform .16s,border-color .16s,background .16s,box-shadow .16s}
+.style-card:hover{transform:translateY(-2px);border-color:#7047c7}
+.style-card strong{font-size:28px;line-height:1}
+.style-card span{font-size:10px;line-height:1.25}
+.style-card.active{border-color:#a03cff;background:linear-gradient(160deg,#1b1233,#0c1424);box-shadow:0 0 0 1px rgba(160,60,255,.12),0 10px 30px rgba(125,37,255,.2)}
+@media(max-width:700px){
+  .hero-art{height:205px;border-radius:22px;background-position:72% center;margin-top:2px}
+  .hero-art .orb{width:72%;height:72%}
+  .hero-product-scene{background:linear-gradient(90deg,rgba(5,8,18,.28),transparent 58%,rgba(5,8,18,.08))}
+  .styles-row{gap:8px;margin:14px -2px;padding-left:2px;padding-right:2px}
+  .style-card{flex:0 0 92px;min-width:92px;min-height:98px;padding:9px 5px;border-radius:16px}
+  .style-card strong{font-size:24px}
+  .style-card span{font-size:8px}
+}

@@ -20,7 +20,7 @@ export class PollinationsImageProvider implements ImageProvider {
       "Preserve the exact source product identity, geometry, proportions, materials, colors and visible details.",
       "Do not redesign or replace the product.",
       "Photorealistic premium e-commerce photography.",
-      "No people, hands, faces, bodies or human skin.",
+      "Do not add people unless the product category naturally calls for a user context; when people are appropriate, keep them realistic and secondary to the product.",
       "No invented text, logos, labels or watermarks.",
     ].join(" ");
 

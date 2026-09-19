@@ -1,6 +1,14 @@
 plugins { id "com.android.application" }
-android { namespace "com.agtstudio.productai"; compileSdk 35
- defaultConfig { applicationId "com.agtstudio.productai"; minSdk 24; targetSdk 35; versionCode 3; versionName "1.0.0" }
+android {
+ namespace "com.agtstudio.productai"
+ compileSdk 35
+ defaultConfig {
+   applicationId "com.agtstudio.productai.test"
+   minSdk 24
+   targetSdk 35
+   versionCode 40
+   versionName "1.0.40"
+ }
  buildFeatures { buildConfig true }
  buildTypes { release { minifyEnabled false; shrinkResources false } }
 }

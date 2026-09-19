@@ -526,7 +526,7 @@
 .modal{overflow:hidden}
 .sheet{display:flex;flex-direction:column;min-height:0;height:min(90vh,760px);overflow:hidden}
 #sheetBody{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:8px;-webkit-overflow-scrolling:touch}
-.provider-grid{display:grid!important;visibility:visible!important;opacity:1!important}
+.provider-grid{display:grid;visibility:visible!important;opacity:1!important}.provider-grid.is-hidden{display:none!important}
 .provider-grid button{display:block!important;visibility:visible!important;opacity:1!important}
 .provider-form-host{display:block;min-height:0}
 @media(max-width:700px){

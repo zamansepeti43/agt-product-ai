@@ -3,6 +3,7 @@ package com.agtstudio.productai;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
@@ -36,6 +37,7 @@ public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION = 2002;
     private static final String CHANNEL_ID = "agt_generation";
     private static final String KEY_ALIAS = "agt_product_ai_vault_v1";
+    private Dialog authDialog;
 
     @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
     @Override
@@ -83,7 +85,83 @@ public class MainActivity extends Activity {
             }
         });
 
+        CookieManager cookies = CookieManager.getInstance();
+        cookies.setAcceptCookie(true);
+        if (Build.VERSION.SDK_INT >= 21) cookies.setAcceptThirdPartyCookies(webView, true);
+        webView.getSettings().setSupportMultipleWindows(true);
+        webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+                // Puter.js authentication uses window.open(). Android WebView otherwise
+                // leaves the auth window unusable. Create a real child WebView so
+                // window.opener/postMessage and shared cookies remain available.
+                runOnUiThread(() -> {
+                    final Dialog dialog = new Dialog(MainActivity.this);
+                    dialog.setTitle("Puter giriş");
+                    WebView auth = new WebView(MainActivity.this);
+                    auth.setBackgroundColor(Color.WHITE);
+                    WebSettings as = auth.getSettings();
+                    as.setJavaScriptEnabled(true);
+                    as.setDomStorageEnabled(true);
+                    as.setSupportMultipleWindows(true);
+                    as.setJavaScriptCanOpenWindowsAutomatically(true);
+                    as.setAllowFileAccess(false);
+                    as.setAllowContentAccess(true);
+                    CookieManager.getInstance().setAcceptCookie(true);
+                    if (Build.VERSION.SDK_INT >= 21) CookieManager.getInstance().setAcceptThirdPartyCookies(auth, true);
+
+                    auth.setWebViewClient(new WebViewClientCompat() {
+                        @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest req) {
+                            return false;
+                        }
+                        @Override @SuppressWarnings("deprecation")
+                        public boolean shouldOverrideUrlLoading(WebView v, String url) { return false; }
+                    });
+                    auth.setWebChromeClient(new WebChromeClient() {
+                        @Override public void onCloseWindow(WebView window) {
+                            if (authDialog != null) {
+                                authDialog.dismiss();
+                                authDialog = null;
+                            }
+                        }
+                        @Override public boolean onCreateWindow(WebView v, boolean d, boolean g, Message msg) {
+                            // Keep nested auth popups inside the same dialog.
+                            WebView child = new WebView(MainActivity.this);
+                            WebSettings cs = child.getSettings();
+                            cs.setJavaScriptEnabled(true);
+                            cs.setDomStorageEnabled(true);
+                            cs.setJavaScriptCanOpenWindowsAutomatically(true);
+                            cs.setSupportMultipleWindows(true);
+                            if (Build.VERSION.SDK_INT >= 21) CookieManager.getInstance().setAcceptThirdPartyCookies(child, true);
+                            child.setWebViewClient(new WebViewClientCompat());
+                            child.setWebChromeClient(this);
+                            android.widget.FrameLayout box = new android.widget.FrameLayout(MainActivity.this);
+                            box.addView(child, new android.widget.FrameLayout.LayoutParams(-1,-1));
+                            dialog.setContentView(box);
+                            child.requestFocus();
+                            ((WebView.WebViewTransport) msg.obj).setWebView(child);
+                            msg.sendToTarget();
+                            return true;
+                        }
+                    });
+                    dialog.setContentView(auth, new android.view.ViewGroup.LayoutParams(-1,-1));
+                    dialog.setOnDismissListener(x -> {
+                        try { auth.stopLoading(); auth.destroy(); } catch(Exception ignored) {}
+                        authDialog = null;
+                    });
+                    authDialog = dialog;
+                    dialog.show();
+                    Window w = dialog.getWindow();
+                    if (w != null) {
+                        w.setLayout((int)(getResources().getDisplayMetrics().widthPixels * 0.96),
+                                    (int)(getResources().getDisplayMetrics().heightPixels * 0.88));
+                    }
+                    ((WebView.WebViewTransport) resultMsg.obj).setWebView(auth);
+                    resultMsg.sendToTarget();
+                });
+                return true;
+            }
             @Override public boolean onConsoleMessage(ConsoleMessage message) {
                 android.util.Log.d("AGTProductAI", message.message() + " @" + message.lineNumber());
                 return true;

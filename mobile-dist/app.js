@@ -288,7 +288,60 @@ function showForm(pid){
 }
 
 function saveProvider(pid,old,p){const key=$("#key")&&$("#key").value.trim()||old&&old.key||"";if(p[4]&&!key){toast(L().key,"error");return}const selectedModel=$("#model").value.trim()||p[5]||(MODEL_CATALOG[pid]&&MODEL_CATALOG[pid][0])||"";const n={id:old&&old.id||crypto.randomUUID(),provider:pid,label:$("#label").value.trim()||p[1],key:key,model:selectedModel,baseUrl:$("#base")&&$("#base").value.trim()||old&&old.baseUrl||"",accountId:$("#account")&&$("#account").value.trim()||old&&old.accountId||"",workflow:$("#workflow")&&$("#workflow").value||old&&old.workflow||""};state.slots=old?state.slots.map(x=>x.id===n.id?n:x):state.slots.concat(n);write("provider-slots",state.slots);state.selected=n.id;state.mode="manual";write("provider-mode","manual");$("#modal").classList.add("hidden");render();toast("✓ "+L().ai,"success")}
-async function generate(){if(state.busy)return;if(!state.file){toast(L().needFile,"error");return}state.error="";state.results=[];let list;if(state.mode==="free")list=[...state.slots].sort((a,b)=>Number(provider(b.provider)&&provider(b.provider)[3])-Number(provider(a.provider)&&provider(a.provider)[3]));else if(state.mode==="paid")list=[...state.slots].sort((a,b)=>Number(provider(a.provider)&&provider(a.provider)[3])-Number(provider(b.provider)&&provider(b.provider)[3]));else list=[state.slots.find(x=>x.id===state.selected)].filter(Boolean);if(!list.length){toast(L().needAI,"error");return}state.busy=true;render();let last="";for(const s of list){try{state.results=await callProvider(s);addHistory();state.busy=false;render();toast("✓ "+L().done,"success");nativeNotify(L().done,L().notifyText);return}catch(e){last=e.message||String(e)}}state.busy=false;state.results=[];state.error=last||"Bilinmeyen bir hata oluştu.";render();toast(L().error+state.error,"error")}
+async function generate(){
+if(state.busy)return;
+if(!state.file){toast(L().needFile,"error");return}
+state.error="";state.results=[];
+let list;
+if(state.mode==="free")list=[...state.slots].sort((a,b)=>Number(provider(b.provider)&&provider(b.provider)[3])-Number(provider(a.provider)&&provider(a.provider)[3]));
+else if(state.mode==="paid")list=[...state.slots].sort((a,b)=>Number(provider(a.provider)&&provider(a.provider)[3])-Number(provider(b.provider)&&provider(b.provider)[3]));
+else list=[state.slots.find(x=>x.id===state.selected)].filter(Boolean);
+if(!list.length){toast(L().needAI,"error");return}
+
+/* If the selected provider runs out of credits, automatically try another
+   connected provider instead of leaving the user at a provider billing wall. */
+const selected=list[0];
+const isLowBalance=e=>/insufficient_funds|low balance|not have enough funding|upgrade to continue|balance cannot cover/i.test(String(e?.message||e||""));
+if(state.mode==="manual"&&selected&&isLowBalance(selected)&&false){}
+
+if(state.mode==="manual"&&selected){
+  const alternatives=[...state.slots]
+    .filter(x=>x.id!==selected.id)
+    .sort((a,b)=>{
+      const af=Number(provider(a.provider)?.[3]??false),bf=Number(provider(b.provider)?.[3]??false);
+      return bf-af;
+    });
+  list=[selected,...alternatives];
+}
+
+state.busy=true;render();
+let last="",usedFallback=false;
+for(const s of list){
+  try{
+    state.results=await callProvider(s);
+    state.selected=s.id;
+    write("provider-selected",s.id);
+    addHistory();
+    state.busy=false;render();
+    toast(usedFallback?"✓ Bakiye yetersizdi; alternatif AI ile üretildi":"✓ "+L().done,"success");
+    nativeNotify(L().done,L().notifyText);
+    return;
+  }catch(e){
+    last=e.message||String(e);
+    if(s.id===selected?.id&&isLowBalance(e)){
+      usedFallback=true;
+      continue;
+    }
+    /* For non-billing errors, keep trying a connected fallback as well. */
+    if(s.id!==selected?.id)continue;
+  }
+}
+state.busy=false;state.results=[];
+state.error=usedFallback
+  ?"Puter bakiyesi yetersiz ve bağlı başka bir AI modeli üretim yapamadı. Lütfen ücretsiz bir AI modeli ekleyin."
+  :(last||"Bilinmeyen bir hata oluştu.");
+render();toast(L().error+state.error,"error")
+}
 async function callProvider(s){
   const total=Math.max(1,Math.min(10,state.count));
   const sourceData=['gemini','aihorde','cloudflare'].includes(s.provider)?await b64(state.file):null;

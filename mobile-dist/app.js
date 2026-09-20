@@ -10,61 +10,25 @@ lifestyle:{tr:"Gerçek Kullanım",en:"Lifestyle",icon:"🏠",ratio:"4:5",prompt:
 detail:{tr:"Detay & Özellik",en:"Detail",icon:"🔍",ratio:"4:5",prompt:"Create a premium product-detail commercial photograph from the supplied reference. First identify the product's most useful visual selling points such as material, texture, construction, compartments, controls, finish or craftsmanship. Preserve exact product geometry, proportions, materials, colors and details. Use a close but useful composition that communicates a real feature without inventing one. Photorealistic, sharp, commercial, no text or watermark."},
 social:{tr:"Sosyal Medya",en:"Social Ad",icon:"📱",ratio:"4:5",prompt:"Create a polished social-media advertising image from the supplied product reference. First identify the product category, target customer and natural usage context. Create a visually strong but believable commercial scene tailored to that product. Preserve exact product identity, geometry, materials, colors and visible details. Leave useful negative space for later design work. Human presence is allowed when contextually appropriate. No generated text, badges or watermark."}};
 const SCENE_VARIATIONS=[
-"Hero: eye-level three-quarter product presentation with premium commercial lighting.",
-"Hero: low camera angle giving the product visual authority while preserving realistic scale.",
-"Hero: elevated camera angle with refined composition and natural soft shadow.",
-"Hero: centered catalog composition with generous breathing room and crisp separation.",
-"Hero: asymmetric premium composition with intentional negative space.",
-"Hero: close editorial crop while keeping the complete product clearly recognizable.",
-"Hero: wide environmental presentation showing the product's natural surroundings.",
-"Hero: subtle foreground/background depth with realistic lens perspective.",
-"Hero: restrained logical props that belong to the actual product category.",
-"Hero: strongest natural commercial presentation for this exact product.",
-"Studio: soft gray seamless sweep, large softbox and realistic contact shadow.",
-"Studio: warm ivory studio environment with gentle side lighting.",
-"Studio: cool neutral studio environment with crisp edges and soft fill.",
-"Studio: premium tabletop studio scene using a surface appropriate to the product.",
-"Studio: dramatic side light revealing real texture and geometry.",
-"Studio: high-key editorial lighting with a subtle gradient background.",
-"Studio: low-key premium lighting with controlled highlights.",
-"Studio: top-down studio composition when physically appropriate.",
-"Studio: three-quarter editorial camera with believable shallow depth of field.",
-"Studio: luxury catalog composition with precise product placement.",
-"Lifestyle: place the product in the most natural real-world environment for its category.",
-"Lifestyle: show the environment where the target customer normally encounters the product.",
-"Lifestyle: use contextual objects that communicate believable scale.",
-"Lifestyle: natural morning-light interpretation suited to the product.",
-"Lifestyle: warm afternoon/evening interpretation suited to the product.",
-"Lifestyle: authentic active-use moment only when the product genuinely benefits from interaction.",
-"Lifestyle: quiet everyday scene with the product naturally integrated.",
-"Lifestyle: premium editorial lifestyle scene with realistic depth.",
-"Lifestyle: wider environmental scene communicating place, purpose and scale.",
-"Lifestyle: strongest believable use-case scene for this exact product.",
-"Detail: macro-style material texture using only details visible in the reference.",
-"Detail: close-up of real construction such as stitching, seams, joints or edges.",
-"Detail: close-up of a functional component such as a handle, control, compartment or closure.",
-"Detail: close-up emphasizing finish, transparency or material quality when visible.",
-"Detail: three-quarter detail view showing how real components connect.",
-"Detail: top-down detail composition when useful for the actual product.",
-"Detail: side-lit detail shot revealing genuine texture without invention.",
-"Detail: shallow-depth editorial detail with the real feature sharply resolved.",
-"Detail: premium catalog feature shot communicating one useful selling point.",
-"Detail: most informative real detail visible in the reference.",
-"Social: bold clean advertising composition with strong product hierarchy.",
-"Social: minimal gradient campaign background with generous copy-safe negative space.",
-"Social: lifestyle-inspired social advertisement matched to the product category.",
-"Social: asymmetric composition designed for modern social-media advertising.",
-"Social: close product crop optimized for visual impact.",
-"Social: wide composition with intentional copy-safe negative space.",
-"Social: premium editorial/fashion treatment when appropriate.",
-"Social: natural-use advertising scene when appropriate to the product.",
-"Social: seasonal/time-of-day campaign treatment only when relevant.",
-"Social: strongest believable social-media selling scenario for this exact product."
+"VARIATION A — INDOOR LIFESTYLE: Build a clearly different indoor environment appropriate to the product, such as a refined kitchen, home interior, vanity, desk, studio workspace or retail interior. Use a distinct surface, background architecture and lighting. Do not use a generic tabletop unless that is genuinely the product's natural setting.",
+"VARIATION B — OUTDOOR / DAYLIGHT: Build a clearly different outdoor or open-air environment appropriate to the product, such as a balcony, terrace, garden, street, storefront exterior, café patio or natural setting. Use daylight, environmental depth and location-specific props. Do not reuse the indoor background.",
+"VARIATION C — REAL USE / CONTEXT: Show the product in the real environment where a customer would naturally use, wear, display or consume it. Use a different surface, camera position, lighting setup and background from Variations A and B. Add a person only when the product genuinely benefits from human interaction.",
+"VARIATION D — PREMIUM EDITORIAL: Create a sophisticated editorial environment appropriate to the product category, with a distinctive architectural or styled setting rather than a plain backdrop. Use a new camera angle, lighting direction and composition.",
+"VARIATION E — CAFÉ / HOSPITALITY: If appropriate to the product, place it in a believable café, restaurant, hotel or hospitality setting; otherwise use the closest natural commercial environment for the category. Make the setting visibly different from a home or studio.",
+"VARIATION F — WORKSPACE / RETAIL: If appropriate, show the product in a realistic office, workshop, boutique, showroom, classroom or retail environment. Use believable contextual objects and scale, never random props.",
+"VARIATION G — MORNING LIGHT: Use a fresh morning atmosphere with long soft daylight and a clearly identifiable environment suited to the product. Change the surface and background family from other variations.",
+"VARIATION H — EVENING / WARM LIGHT: Use a realistic late-afternoon or evening environment with warm directional light, deeper background and a different location from other variations.",
+"VARIATION I — ARCHITECTURAL: Use a visually distinctive real architectural setting such as a modern interior, stone terrace, boutique entrance or designed space, chosen according to the product category.",
+"VARIATION J — NATURAL ENVIRONMENT: If physically appropriate, place the product in a garden, park, natural landscape or outdoor setting. Otherwise choose a natural-light environment that makes sense for the product.",
+"VARIATION K — CLOSE COMMERCIAL SCENE: Use a closer but complete environmental composition with foreground and background depth. Keep the full product visible and change the setting, angle and lighting from other variations.",
+"VARIATION L — ALTERNATE USE CASE: Show a second legitimate use context for the same product when one exists. The product identity must remain exact; never invent a new function."
 ];
+
 function intelligentPrompt(recipeId,index=0,extra=""){
 const base=RECIPES[recipeId]?.prompt||RECIPES.hero.prompt;
 const scene=SCENE_VARIATIONS[index%SCENE_VARIATIONS.length];
-return base+"\n\nPRODUCT INTELLIGENCE: Analyze the supplied reference before generating. Silently classify the product and infer its likely customer, environment and natural use. Build a COMPLETE PHOTOGRAPHIC SCENE around the product; do not simply cut out the product and place it on a flat background. Examples: if it is a school backpack, show it naturally worn by a school-age child or teenager on the way to school when appropriate, keeping the backpack clearly visible; if it is a book, place it naturally on a desk, reading table, bedside table or study environment with believable scale and lighting; if it is cookware, show it in a realistic kitchen context; if it is jewelry, use an elegant fashion/editorial context; if it is footwear, show a realistic fashion or walking context; if it is stationery, show a desk/workspace context. These are examples, not fixed rules—always infer from the actual reference. Never force an unrelated scene.\n\nCOMPOSITION RULES: Do NOT center the product by default. Use a professional rule-of-thirds composition, placing the product left or right of center and leaving meaningful environmental space around it. Show a believable surface, background depth, foreground/background elements, contact shadow, reflections and atmospheric lighting appropriate to the product. The final image should look like a real commercial photograph taken on location or in a designed studio set, not a cropped product cutout. Do not crop the product, do not zoom it to fill the frame, and do not make the product occupy most of the image.\n\nFRAGRANCE SPECIAL RULE: If the reference is a perfume or fragrance bottle, create a complete luxury fragrance campaign scene around the exact bottle. Preserve the bottle silhouette, cap, glass, liquid color, label and visible details. Use a sophisticated environment such as dark marble, satin fabric, stone, flowers, soft mist, warm/cool cinematic light or elegant architectural surfaces according to the product mood. Place the bottle clearly off-center using the rule of thirds, approximately one-third of the frame, with the scene extending naturally around it. The bottle must sit on a real surface with believable contact shadow and reflections; never float, isolate, crop or paste it onto a plain gradient.\n\n"+scene+"\n\nVARIATION RULE: Make this image materially different from other requested variations in camera angle, composition, environment, lighting or use context while keeping the exact same product. Do not redesign, merge, duplicate or alter the product. No hallucinated features, labels, logos, text or watermark."+(extra.trim()?"\n\nAdditional user direction: "+extra.trim():"");
+const variationNumber=index+1;
+return base+"\n\nPRODUCT INTELLIGENCE: Analyze the supplied reference before generating. Silently classify the product, its likely customer, real-world use, scale and natural environment. Build a COMPLETE PHOTOGRAPHIC SCENE around the exact supplied product; never simply cut it out and paste it onto a flat background. Infer the setting from the actual product rather than from a fixed template. Preserve exact product identity, geometry, proportions, materials, colors, labels and visible details.\n\nOUTPUT VARIATION "+variationNumber+": This is one image in a multi-image set. It MUST have a materially different environment from the other requested images. Do not reuse the same room, tabletop, wall, background, surface, prop arrangement, lighting setup or camera angle. Choose the variation direction below and adapt it intelligently to the actual product.\n\n"+scene+"\n\nCOMPOSITION RULES: Use a professional rule-of-thirds composition instead of automatically centering the product. Keep the entire product visible and recognizable. Do not crop it, do not zoom until it fills most of the frame, and do not make it look like a cutout. Include believable surface contact, contact shadow, reflections where physically appropriate, background depth, foreground/background separation and realistic lens perspective. The product should remain the visual subject while the environment clearly communicates where it belongs.\n\nDIVERSITY ENFORCEMENT: Across a set of 3 images, prioritize three different location families, not three slightly different crops of the same location. Prefer: (1) indoor lifestyle or retail, (2) outdoor/open-air or daylight architecture, (3) authentic real-use context. If one family is physically unsuitable, replace it with another legitimate environment that is clearly different. Change camera angle, surface, background, lighting direction and supporting objects between variations. NEVER repeat the same background scene merely because the product is identical.\n\nFRAGRANCE SPECIAL RULE: If the reference is a perfume or fragrance bottle, create a complete luxury fragrance campaign scene around the exact bottle. Preserve the bottle silhouette, cap, glass, liquid color, label and visible details. For different variations, deliberately change the campaign environment—for example dark marble and architectural stone, elegant vanity/dressing area, or refined outdoor evening setting—while keeping the bottle exact. Place the bottle clearly off-center using the rule of thirds, on a real surface with believable contact shadow and reflections. Never float, isolate, crop or paste it onto a plain gradient.\n\nPRODUCT-SPECIFIC EXAMPLES: For tableware or coffee products, use genuinely different settings such as a home kitchen, café terrace and breakfast/hospitality scene. For clothing or accessories, use different wardrobe, street, boutique or editorial contexts. For electronics, use different desk, living-space, office or travel contexts. For books and stationery, use different study, office, library or café contexts. For cookware, use different kitchen, dining and outdoor cooking contexts. These are examples only; always obey the actual reference and never force an unrelated scene.\n\nNEGATIVE CONSTRAINTS: No duplicate product, extra product, altered geometry, invented features, changed colors, fake labels, generated text, watermark, floating object, pasted cutout, plastic-looking edges, impossible shadows or unrelated props. Keep the exact same product in every variation."+(extra.trim()?"\n\nAdditional user direction: "+extra.trim():"");
 }
 const MODEL_CATALOG={
 pollinations:["Qwen Image 3","Qwen Image","FLUX.1 Schnell","FLUX.2 Klein 4B","FLUX.1 Kontext Pro","GPT Image 2","GPT Image 1.5","GPT Image 1 Mini","Grok Imagine","Grok Imagine Image 2.0","Grok Imagine Pro","Ideogram 4.0 Balanced","Ideogram 4.0 Quality","Ideogram 4.0 Turbo","Krea 2","Nano Banana","Nano Banana 2","Nano Banana 2 Lite","Nano Banana Pro","Recraft V4.1","Seedream 4.0","Seedream 4.5","Seedream 5.0 Lite","Seedream 5.0 Pro","Wan 2.7 Image","Wan 2.7 Image Pro","Z-Image Turbo","Lucid Origin","DreamShaper 8 LCM"],

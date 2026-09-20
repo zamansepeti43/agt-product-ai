@@ -1,0 +1,2 @@
+const { contextBridge, Notification } = require("electron");
+contextBridge.exposeInMainWorld("AGTNative",{notify(title,body){try{new Notification({title:String(title||"AGT Product AI"),body:String(body||"")}).show();}catch(_){}}});

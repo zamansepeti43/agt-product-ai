@@ -1,0 +1,35 @@
+name: Windows EXE
+on:
+  push:
+    branches: [main]
+    paths: ["desktop/**","mobile-dist/**",".github/workflows/windows-exe.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package.json
+      - name: Validate app JavaScript
+        shell: bash
+        run: node --check mobile-dist/app.js
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm install --no-audit --no-fund
+      - name: Build Windows installer and portable EXE
+        working-directory: desktop
+        run: npm run dist
+      - name: Upload Windows builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: AGT-Product-AI-Windows
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.yml
+          retention-days: 30

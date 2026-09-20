@@ -40,6 +40,7 @@ export default function ProductStudio() {
   const [finderOpen, setFinderOpen] = useState(false);
   const [pollinationsConnected, setPollinationsConnected] = useState(false);
   const [providerConnected, setProviderConnected] = useState(false);
+  const [expandedProvider, setExpandedProvider] = useState<ProviderId | null>(null);
 
   const selected = useMemo(() => GENERATION_PRESETS.find((p) => p.id === mode) || GENERATION_PRESETS[0], [mode]);
   const selectedProvider = providers.find((p) => p.id === provider) || providers[0];
@@ -66,6 +67,7 @@ export default function ProductStudio() {
 
   function selectProvider(id: ProviderId) {
     setProvider(id);
+    setExpandedProvider(id);
     localStorage.setItem("agt-ai-provider", id);
     setError("");
     if (id === "openai") { setBaseUrl("https://api.openai.com/v1"); setModel("gpt-image-1"); }
@@ -74,6 +76,14 @@ export default function ProductStudio() {
     if (id === "pollinations") setModel("qwen-image-3");
     if (id === "cloudflare") setModel("@cf/runwayml/stable-diffusion-v1-5-img2img");
     if (id === "custom-openai") { setBaseUrl(""); setModel(""); }
+  }
+
+  function toggleProvider(id: ProviderId) {
+    if (provider === id && expandedProvider === id) {
+      setExpandedProvider(null);
+      return;
+    }
+    selectProvider(id);
   }
 
   function selectFiles(next: File[]) {
@@ -292,19 +302,26 @@ export default function ProductStudio() {
     <section className="studio-section ai-section">
       <div className="section-title-row ai-title"><div><p className="studio-kicker">2 · AI MOTORU</p><h2>İstediğin yapay zekâyı bağla <button className="mini-help" aria-label="Bilgi">?</button></h2><p>Secret key'ler client bundle veya localStorage'a girmez; güvenli HttpOnly oturumda tutulur.</p></div><button className="outline-button" onClick={openFinder}>🔎 API Finder <span>→</span></button></div>
       <select className="provider-mobile-select" value={provider} onChange={(e) => selectProvider(e.target.value as ProviderId)} aria-label="AI motoru seç">{providers.map((p) => <option key={p.id} value={p.id}>{p.icon} {p.label} — {p.note}</option>)}</select>
-      <div id="provider-options" className="provider-options">{providers.map((p) => <button key={p.id} onClick={() => selectProvider(p.id)} className={`provider-option ${provider === p.id ? "is-selected" : ""}`}><strong>{p.icon} {p.label}</strong><small>{p.note}</small></button>)}</div>
-      {provider !== "comfyui" && <div className="provider-fields">
-        {provider === "cloudflare" && <input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Cloudflare Account ID" />}
-        
-        {provider === "pollinations" ? <div className="pollinations-connect-box"><button type="button" className="outline-button" onClick={connectPollinations}>{pollinationsConnected ? "✓ Bağlandı · Yenile" : "⚡ Pollinations hesabını bağla"}</button></div> : provider !== "auto-free" && provider !== "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={`${selectedProvider.label} API Key · gerekli`} autoComplete="off" />}
-        {provider === "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Cloudflare API Token" autoComplete="off" />}
-        {["openai", "custom-openai", "cloudflare", "aihorde", "gemini", "pollinations"].includes(provider) && <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Model adı" />}
-        {(provider === "openai" || provider === "custom-openai") && <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="API Base URL" />}
+      <div id="provider-options" className="provider-options">{providers.map((p) => <button type="button" key={p.id} onClick={() => toggleProvider(p.id)} className={`provider-option ${provider === p.id ? "is-selected" : ""}`} aria-expanded={provider === p.id && expandedProvider === p.id}><strong>{p.icon} {p.label}</strong><small>{p.note}</small>{provider === p.id && <span className="provider-option-state">{expandedProvider === p.id ? "▲ Yapılandırmayı kapat" : "▼ API / model ayarlarını aç"}</span>}</button>)}</div>
+      {expandedProvider === provider && provider !== "auto-free" && provider !== "comfyui" && <div className="provider-config-card">
+        <div className="provider-config-head">
+          <div><strong>{selectedProvider.icon} {selectedProvider.label} ayarları</strong><small>Bu modele özel API anahtarı ve model bilgilerini burada tanımla.</small></div>
+          {providerConnected && <span className="provider-connected">✓ Bağlı</span>}
+        </div>
+        <div className="provider-fields">
+          {provider === "cloudflare" && <input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Cloudflare Account ID" />}
+          {provider === "pollinations" ? <div className="pollinations-connect-box"><button type="button" className="outline-button" onClick={connectPollinations}>{pollinationsConnected ? "✓ Bağlandı · Yenile" : "⚡ Pollinations hesabını bağla"}</button></div> : provider !== "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={`${selectedProvider.label} API Key · gerekli`} autoComplete="off" />}
+          {provider === "cloudflare" && <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Cloudflare API Token" autoComplete="off" />}
+          {["openai", "custom-openai", "cloudflare", "aihorde", "gemini", "pollinations"].includes(provider) && <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Model adı" />}
+          {(provider === "openai" || provider === "custom-openai") && <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="API Base URL" />}
+        </div>
+        {provider !== "pollinations" && provider !== "aihorde" && <button type="button" className="provider-save-button" onClick={() => connectProviderCredentials().catch((e) => setError(e instanceof Error ? e.message : "API anahtarı kaydedilemedi."))}>{providerConnected ? "✓ Ayarları güncelle" : "🔐 API anahtarını bağla"}</button>}
+        {provider === "aihorde" && <p className="provider-help">🌐 API anahtarı isteğe bağlıdır; model adıyla doğrudan ortak kuyruk kullanılabilir.</p>}
       </div>}
-      {provider === "auto-free" && <p className="provider-help">🆓 Önce yapılandırılmış ComfyUI, sonra AI Horde denenir. Anahtar girmeden topluluk kuyruğu kullanılabilir.</p>}
-      {provider === "aihorde" && <p className="provider-help">🌐 Anahtarsız kullanım ortak kuyruğa bağlıdır; hızlı üretim için Hızlı AI kullan.</p>}
-      {provider === "pollinations" && <p className="provider-help">⚡ Kendi Pollinations hesabını bağla. AGT uygulama kimliği sabittir; kullanım senin onayladığın kapsam ve bütçeden düşer. Secret key tarayıcıda tutulmaz.</p>}
-      {provider === "cloudflare" && <p className="provider-help">Cloudflare img2img için Account ID + API Token gerekir.</p>}
+      {provider === "auto-free" && expandedProvider === provider && <p className="provider-help">🆓 Yapılandırılmış ComfyUI, ardından AI Horde fallback kullanılır. Anahtar girmeden başlayabilirsin.</p>}
+      {provider === "comfyui" && expandedProvider === provider && <p className="provider-help">🧩 ComfyUI masaüstünde yerel olarak çalışır. API anahtarı gerekmez.</p>}
+      {provider === "pollinations" && expandedProvider === provider && <p className="provider-help">⚡ Pollinations hesabını bağla. Secret key tarayıcıda tutulmaz.</p>}
+      {provider === "cloudflare" && expandedProvider === provider && <p className="provider-help">☁️ Cloudflare için Account ID + API Token gerekir.</p>
     </section>
 
     <section className="studio-section production-section">

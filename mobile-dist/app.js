@@ -288,6 +288,41 @@ function showForm(pid){
 }
 
 function saveProvider(pid,old,p){const key=$("#key")&&$("#key").value.trim()||old&&old.key||"";if(p[4]&&!key){toast(L().key,"error");return}const selectedModel=$("#model").value.trim()||p[5]||(MODEL_CATALOG[pid]&&MODEL_CATALOG[pid][0])||"";const n={id:old&&old.id||crypto.randomUUID(),provider:pid,label:$("#label").value.trim()||p[1],key:key,model:selectedModel,baseUrl:$("#base")&&$("#base").value.trim()||old&&old.baseUrl||"",accountId:$("#account")&&$("#account").value.trim()||old&&old.accountId||"",workflow:$("#workflow")&&$("#workflow").value||old&&old.workflow||""};state.slots=old?state.slots.map(x=>x.id===n.id?n:x):state.slots.concat(n);write("provider-slots",state.slots);state.selected=n.id;state.mode="manual";write("provider-mode","manual");$("#modal").classList.add("hidden");render();toast("✓ "+L().ai,"success")}
+/* Puter billing guard: Puter may render its own Low Balance dialog before the rejected promise reaches our catch. Keep that provider UI from trapping the app and remember the failure briefly so the next generation can skip Puter. */
+const PUTER_LOW_BALANCE_KEY="agt-puter-low-balance";
+let puterBillingGuardInstalled=false;
+function puterKnownLowBalance(){
+  const x=read(PUTER_LOW_BALANCE_KEY);
+  return !!(x&&Number(x.at)&&Date.now()-Number(x.at)<30*60*1000);
+}
+function markPuterLowBalance(){write(PUTER_LOW_BALANCE_KEY,{at:Date.now()});}
+function dismissPuterBillingDialog(){
+  const rx=/low balance|your account does not have enough funding|please upgrade to continue|puter-image-generation::generate|insufficient[_ ]funds/i;
+  const candidates=[...document.querySelectorAll('dialog,[role="dialog"],[class*="modal"],[class*="dialog"],body *')];
+  for(const el of candidates){
+    const txt=String(el?.innerText||el?.textContent||'').trim();
+    if(!txt||txt.length>700||!rx.test(txt))continue;
+    let box=el;
+    for(let i=0;i<6&&box?.parentElement;i++){
+      const cs=getComputedStyle(box);
+      const buttons=box.querySelectorAll?.('button')?.length||0;
+      if(cs.position==='fixed'||cs.position==='absolute'||cs.zIndex&&Number(cs.zIndex)>100||buttons>=1)break;
+      box=box.parentElement;
+    }
+    const close=[...box.querySelectorAll?.('button')||[]].find(b=>/close|kapat|×/i.test(String(b.innerText||b.getAttribute('aria-label')||'')));
+    try{if(close)close.click();else{box.style.setProperty('display','none','important');box.style.setProperty('visibility','hidden','important');box.setAttribute('aria-hidden','true')}}catch(_){ }
+    return true;
+  }
+  return false;
+}
+function installPuterBillingGuard(){
+  if(puterBillingGuardInstalled||typeof MutationObserver==='undefined')return;
+  puterBillingGuardInstalled=true;
+  const scan=()=>dismissPuterBillingDialog();
+  try{new MutationObserver(scan).observe(document.documentElement,{childList:true,subtree:true})}catch(_){ }
+  scan();
+}
+installPuterBillingGuard();
 async function generate(){
 if(state.busy)return;
 if(!state.file){toast(L().needFile,"error");return}
@@ -296,7 +331,9 @@ let list;
 if(state.mode==="free")list=[...state.slots].sort((a,b)=>Number(provider(b.provider)&&provider(b.provider)[3])-Number(provider(a.provider)&&provider(a.provider)[3]));
 else if(state.mode==="paid")list=[...state.slots].sort((a,b)=>Number(provider(a.provider)&&provider(a.provider)[3])-Number(provider(b.provider)&&provider(b.provider)[3]));
 else list=[state.slots.find(x=>x.id===state.selected)].filter(Boolean);
-if(!list.length){toast(L().needAI,"error");return}
+/* If Puter was recently confirmed out of balance, skip it before opening its billing UI. */
+if(puterKnownLowBalance())list=list.filter(x=>x.provider!=="puter");
+if(!list.length){toast(puterKnownLowBalance()?"Puter bakiyesi yetersiz. Üretim için başka bir AI modeli bağla.":L().needAI,"error");return}
 
 /* If the selected provider runs out of credits, automatically try another
    connected provider instead of leaving the user at a provider billing wall. */
@@ -327,6 +364,10 @@ for(const s of list){
     return;
   }catch(e){
     last=e.message||String(e);
+    if(s.provider==="puter"&&isLowBalance(e)){
+      markPuterLowBalance();
+      dismissPuterBillingDialog();
+    }
     if(s.id===selected?.id&&isLowBalance(e)){
       usedFallback=true;
       continue;
@@ -347,6 +388,7 @@ async function callProvider(s){
   const runOne=async(index)=>{
     const p=promptText(index);
     if(s.provider==='puter'){
+      if(puterKnownLowBalance())throw Error('Puter bakiyesi yetersiz (önceden tespit edildi).');
       if(!window.puter?.ai?.txt2img)throw Error('Puter AI yüklenemedi. İnternet bağlantısını kontrol et.');
       const input=await toData(state.file);
       const options={model:s.model||'openai/gpt-image-2.5-flare',input_image:input,quality:'high',ratio:{w:state.ratio==='4:5'?1024:1024,h:state.ratio==='4:5'?1280:1024}};

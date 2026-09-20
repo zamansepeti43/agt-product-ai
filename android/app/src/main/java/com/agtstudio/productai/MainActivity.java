@@ -12,6 +12,8 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Message;
+import android.view.Window;
 import android.view.View;
 import android.webkit.*;
 import android.widget.FrameLayout;

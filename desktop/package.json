@@ -1,0 +1,21 @@
+{
+  "name": "agt-product-ai-desktop",
+  "version": "1.0.0",
+  "description": "AGT Studio Product AI - Windows desktop app",
+  "main": "main.js",
+  "author": "AGT Studio",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {"start":"electron .","dist":"electron-builder --win nsis portable"},
+  "devDependencies": {"electron":"^38.2.2","electron-builder":"^26.0.12"},
+  "build": {
+    "appId":"com.agtstudio.productai.desktop",
+    "productName":"AGT Product AI",
+    "artifactName":"AGT-Product-AI-Windows-${version}-${arch}.${ext}",
+    "directories":{"output":"dist"},
+    "files":["main.js","preload.js"],
+    "extraResources":[{"from":"../mobile-dist","to":"mobile-dist","filter":["**/*"]}],
+    "win":{"target":[{"target":"nsis","arch":["x64"]},{"target":"portable","arch":["x64"]}]},
+    "nsis":{"oneClick":false,"perMachine":false,"allowToChangeInstallationDirectory":true,"createDesktopShortcut":true,"createStartMenuShortcut":true,"shortcutName":"AGT Product AI"}
+  }
+}

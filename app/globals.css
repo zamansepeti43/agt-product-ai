@@ -173,3 +173,15 @@ h2 { margin:0; font-size:26px; letter-spacing:-.03em; }
 }
 
 /* mobile deployment refresh */
+
+/* AI provider configuration expansion */
+.provider-option-state{display:block;margin-top:7px;color:#9da5ff;font-size:9px;font-weight:750;letter-spacing:.02em}
+.provider-config-card{margin-top:10px;border:1px solid #343b55;border-radius:14px;padding:13px;background:linear-gradient(145deg,rgba(80,87,190,.12),#0e121a);box-shadow:0 10px 28px rgba(0,0,0,.16)}
+.provider-config-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
+.provider-config-head strong,.provider-config-head small{display:block}
+.provider-config-head strong{font-size:13px}
+.provider-config-head small{margin-top:4px;color:#7f8798;font-size:10px;line-height:1.45}
+.provider-connected{flex:none;border:1px solid #315442;border-radius:999px;padding:5px 8px;background:#0e1a14;color:#a9d8bd;font-size:9px;font-weight:800}
+.provider-save-button{width:100%;margin-top:10px;border:1px solid #6f77ff;border-radius:11px;padding:11px 13px;background:linear-gradient(100deg,#3026a8,#5c43db);color:#fff;font-size:11px;font-weight:800;cursor:pointer}
+.provider-save-button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+@media(max-width:800px){.provider-config-head{flex-direction:column}.provider-connected{align-self:flex-start}.provider-option-state{font-size:8px}}

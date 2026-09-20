@@ -302,7 +302,6 @@ if(!list.length){toast(L().needAI,"error");return}
    connected provider instead of leaving the user at a provider billing wall. */
 const selected=list[0];
 const isLowBalance=e=>/insufficient_funds|low balance|not have enough funding|upgrade to continue|balance cannot cover/i.test(String(e?.message||e||""));
-if(state.mode==="manual"&&selected&&isLowBalance(selected)&&false){}
 
 if(state.mode==="manual"&&selected){
   const alternatives=[...state.slots]

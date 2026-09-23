@@ -88,7 +88,7 @@ jobs:
               for path in paths:
                   low = path.split("::",1)[-1].lower()
                   norm = re.sub(r"[^a-z0-9]+", " ", low).strip()
-                  if any(re.search(r"(?<![a-z0-9])" + re.escape(term.lower()).replace(r"\\ ", r"[ _-]+") + r"(?![a-z0-9])", norm) for term in terms):
+                  if any(re.search(r"(?<![a-z0-9])" + re.escape(term.lower()).replace(" ", r"[ _-]+") + r"(?![a-z0-9])", norm) for term in terms):
                       candidates.append(path)
               # Stable ordering: shorter/specific names first, then lexical.
               candidates = sorted(set(candidates), key=lambda p:(len(p),p.lower()))

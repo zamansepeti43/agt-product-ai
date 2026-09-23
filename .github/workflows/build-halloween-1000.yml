@@ -16,8 +16,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          python3 -m pip install --quiet cairosvg pillow
-
           git clone --filter=blob:none --no-checkout --depth=1 https://github.com/ikks/openclipartcollection.git build/openclipart
           git -C build/openclipart ls-tree -r --name-only HEAD > build/all_paths.txt
 
@@ -114,11 +112,6 @@ jobs:
                   stem = re.sub(r"[^A-Za-z0-9_-]+","_",Path(path).stem)[:80]
                   base = f"{selected+1:03d}_{stem}"
                   (out/(base+".svg")).write_bytes(data)
-                  try:
-                      cairosvg.svg2png(bytestring=data, write_to=str(out/(base+".png")), output_width=1600, output_height=1600)
-                  except Exception:
-                      (out/(base+".svg")).unlink(missing_ok=True)
-                      continue
                   entries.append({"file":base,"source_path":path,"source_url":"https://github.com/ikks/openclipartcollection/blob/main/"+urllib.parse.quote(path,safe="/"),"license":"OpenClipart public domain / CC0"})
                   selected += 1
               if selected != 100:

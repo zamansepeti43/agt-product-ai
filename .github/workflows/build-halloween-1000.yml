@@ -36,29 +36,29 @@ jobs:
 
           categories = {
               "01_Pumpkins": ["pumpkin", "jack-o-lantern", "jack_o_lantern", "jackolantern"],
-              "02_Bats": ["bat", "bats"],
-              "03_Ghosts": ["ghost", "ghosts", "phantom", "specter", "spectre", "spirit", "wraith"],
-              "04_Witches": ["witch", "witches", "broomstick", "broom"],
-              "05_Spiders": ["spider", "spiders", "spiderweb", "cobweb"],
-              "06_Skulls": ["skull", "skulls", "skeleton"],
-              "07_Black_Cats": ["black-cat", "black_cat", "blackcat", "halloween-cat", "halloween_cat", "cat-silhouette", "cat_silhouette"],
-              "08_Graveyard": ["graveyard", "grave", "gravestone", "tombstone", "cemetery", "crypt"],
-              "09_Haunted_Houses": ["haunted-house", "haunted_house", "haunted", "spooky-house", "spooky_house", "haunted-mansion", "haunted_mansion"],
-              "10_Halloween_Gothic": ["halloween", "gothic", "spooky", "horror", "trick-or-treat", "cauldron"]
+              "02_Bats_Night_Flyers": ["bat", "bats", "raven", "crow", "owl"],
+              "03_Ghosts_Spirits": ["ghost", "ghosts", "phantom", "specter", "spectre", "spirit", "wraith"],
+              "04_Witches_Brooms": ["witch", "witches", "broom", "broomstick", "cauldron"],
+              "05_Spiders_Webs": ["spider", "spiders", "spiderweb", "cobweb", "web"],
+              "06_Skulls_Skeletons": ["skull", "skulls", "skeleton", "bones", "bone"],
+              "07_Cats_Felines": ["cat", "cats", "kitten", "feline"],
+              "08_Graveyard_Tombstones": ["graveyard", "grave", "gravestone", "tombstone", "cemetery", "churchyard", "crypt"],
+              "09_Haunted_Gothic_Buildings": ["haunted-house", "haunted_house", "haunted", "spooky-house", "spooky_house", "mansion", "manor", "castle", "gothic-building"],
+              "10_Halloween_Gothic_Decor": ["halloween", "gothic", "spooky", "horror", "trick-or-treat", "cauldron", "candy", "pumpkin-carving"]
           }
 
           forbidden = ["logo","brand","trademark","advertisement","favicon","sprite","pixel","mario","batman","superman","disney","pokemon"]
           cross = {
-              "01_Pumpkins":["bat","ghost","witch","spider","skull","skeleton","black-cat","black_cat","grave","tombstone","house"],
-              "02_Bats":["pumpkin","ghost","witch","spider","skull","skeleton","cat","grave","tombstone","house"],
-              "03_Ghosts":["pumpkin","bat","witch","spider","skull","skeleton","cat","grave","tombstone","house"],
-              "04_Witches":["pumpkin","bat","ghost","spider","skull","skeleton","cat","grave","tombstone","house"],
-              "05_Spiders":["pumpkin","bat","ghost","witch","skull","skeleton","cat","grave","tombstone","house"],
-              "06_Skulls":["pumpkin","bat","ghost","witch","spider","cat","grave","tombstone","house"],
-              "07_Black_Cats":["pumpkin","bat","ghost","witch","spider","skull","skeleton","grave","tombstone","house"],
-              "08_Graveyard":["pumpkin","bat","ghost","witch","spider","skull","skeleton","cat"],
-              "09_Haunted_Houses":["pumpkin","bat","ghost","witch","spider","skull","skeleton","cat","grave","tombstone"],
-              "10_Halloween_Gothic":["pumpkin","bat","ghost","witch","spider","skull","skeleton","cat","grave","tombstone","haunted-house","haunted_house"]
+              "01_Pumpkins":["bat","ghost","witch","spider","skull","skeleton","cat","grave","tombstone","house"],
+              "02_Bats_Night_Flyers":["pumpkin","ghost","witch","spider","skull","skeleton","cat","grave","tombstone","house"],
+              "03_Ghosts_Spirits":["pumpkin","bat","witch","spider","skull","skeleton","cat","grave","tombstone","house"],
+              "04_Witches_Brooms":["pumpkin","bat","ghost","spider","skull","skeleton","cat","grave","tombstone","house"],
+              "05_Spiders_Webs":["pumpkin","bat","ghost","witch","skull","skeleton","cat","grave","tombstone","house"],
+              "06_Skulls_Skeletons":["pumpkin","bat","ghost","witch","spider","cat","grave","tombstone","house"],
+              "07_Cats_Felines":["pumpkin","bat","ghost","witch","spider","skull","skeleton","grave","tombstone","house"],
+              "08_Graveyard_Tombstones":["pumpkin","bat","ghost","witch","spider","skull","skeleton","cat"],
+              "09_Haunted_Gothic_Buildings":["pumpkin","bat","ghost","witch","spider","skull","skeleton","cat","grave","tombstone"],
+              "10_Halloween_Gothic_Decor":["pumpkin","bat","ghost","witch","spider","skull","skeleton","cat","grave","tombstone","haunted-house","haunted_house"]
           }
 
           def raw(item):

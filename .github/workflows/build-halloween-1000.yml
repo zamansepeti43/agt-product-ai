@@ -1,0 +1,204 @@
+name: Build Halloween 1000 Asset Pack
+
+on:
+  push:
+    branches:
+      - asset-build-halloween-1000
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Build sourced CC0 Halloween pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          python3 -m pip install --quiet cairosvg pillow
+
+          cat > build/make_pack.py <<'PY'
+          import os, re, json, time, hashlib, subprocess, urllib.parse, pathlib, shutil
+          from pathlib import Path
+          import cairosvg
+
+          ROOT = Path("build/halloween_1000")
+          ROOT.mkdir(parents=True, exist_ok=True)
+          API = "https://api.github.com/search/code"
+          RAW = "https://raw.githubusercontent.com/ikks/openclipartcollection/main/"
+          TOKEN = os.environ["GH_TOKEN"]
+
+          categories = {
+              "01_Pumpkins": [
+                  "pumpkin", "jack-o-lantern", "jack_o_lantern", "jackolantern"
+              ],
+              "02_Bats": ["bat", "bats", "bat silhouette"],
+              "03_Ghosts": ["ghost", "ghosts", "phantom"],
+              "04_Witches": ["witch", "witches", "broomstick", "witch broom"],
+              "05_Spiders": ["spider", "spiders", "spiderweb", "cobweb"],
+              "06_Skulls": ["skull", "skulls", "skeleton skull", "death skull"],
+              "07_Black_Cats": ["black cat", "black_cat", "halloween cat", "cat silhouette"],
+              "08_Graveyard": ["graveyard", "grave", "gravestone", "tombstone", "cemetery", "crypt"],
+              "09_Haunted_Houses": ["haunted house", "haunted-house", "haunted", "spooky house", "haunted mansion"],
+              "10_Halloween_Gothic": ["halloween", "gothic halloween", "spooky", "horror", "trick or treat", "cauldron"]
+          }
+
+          forbidden_common = [
+              "logo", "brand", "trademark", "advertisement", "button", "icon64",
+              "64x64", "favicon", "pixel", "sprite", "game", "mario", "batman"
+          ]
+
+          cross_exclude = {
+              "01_Pumpkins": ["bat", "ghost", "witch", "spider", "skull", "cat", "grave", "house"],
+              "02_Bats": ["pumpkin", "ghost", "witch", "spider", "skull", "cat", "grave", "house"],
+              "03_Ghosts": ["pumpkin", "bat", "witch", "spider", "skull", "cat", "grave", "house"],
+              "04_Witches": ["pumpkin", "bat", "ghost", "spider", "skull", "cat", "grave", "house"],
+              "05_Spiders": ["pumpkin", "bat", "ghost", "witch", "skull", "cat", "grave", "house"],
+              "06_Skulls": ["pumpkin", "bat", "ghost", "witch", "spider", "cat", "grave", "house"],
+              "07_Black_Cats": ["pumpkin", "bat", "ghost", "witch", "spider", "skull", "grave", "house"],
+              "08_Graveyard": ["pumpkin", "bat", "ghost", "witch", "spider", "skull", "cat"],
+              "09_Haunted_Houses": ["pumpkin", "bat", "ghost", "witch", "spider", "skull", "cat"],
+              "10_Halloween_Gothic": ["pumpkin", "bat", "ghost", "witch", "spider", "skull", "cat", "grave", "tombstone", "house"]
+          }
+
+          session = subprocess.run
+          headers = ["-H", f"Authorization: Bearer {TOKEN}", "-H", "Accept: application/vnd.github+json", "-H", "X-GitHub-Api-Version: 2022-11-28"]
+
+          def api_search(q, page):
+              url = API + "?" + urllib.parse.urlencode({
+                  "q": q + " repo:ikks/openclipartcollection",
+                  "per_page": "100",
+                  "page": str(page)
+              })
+              p = session(["curl","-fsSL",*headers,url], capture_output=True, text=True)
+              if p.returncode != 0:
+                  raise RuntimeError(p.stderr)
+              return json.loads(p.stdout)
+
+          def good_candidate(path, text):
+              low = path.lower()
+              if not low.endswith(".svg"):
+                  return False
+              if any(x in low for x in forbidden_common):
+                  return False
+              # Reject composite/theme files that are likely to mix several categories.
+              if any(x in low for x in cross_exclude[current] if x not in low[:0]):
+                  return False
+              if "<svg" not in text[:5000].lower():
+                  return False
+              if "<image" in text.lower() or "xlink:href="http" in text.lower() or "href="http" in text.lower():
+                  return False
+              if "viewbox" not in text.lower() and not re.search(r'\bwidth=', text, re.I):
+                  return False
+              primitives = len(re.findall(r'<(?:path|polygon|polyline|circle|ellipse|rect|line)\\b', text, re.I))
+              if primitives < 2:
+                  return False
+              if len(text) < 1200 or len(text) > 600000:
+                  return False
+              return True
+
+          def fetch_raw(path):
+              url = RAW + urllib.parse.quote(path, safe="/")
+              p = session(["curl","-fsSL",url], capture_output=True)
+              if p.returncode != 0:
+                  return None
+              return p.stdout
+
+          manifest = {"source": "https://github.com/ikks/openclipartcollection", "license": "OpenClipart public domain / CC0", "categories": {}}
+          global_hashes = set()
+
+          for current, terms in categories.items():
+              out = ROOT / current
+              out.mkdir(parents=True, exist_ok=True)
+              candidates = []
+              seen_paths = set()
+
+              for term in terms:
+                  for page in range(1, 4):
+                      try:
+                          data = api_search(term, page)
+                      except Exception:
+                          continue
+                      for item in data.get("items", []):
+                          path = item.get("path", "")
+                          if path and path not in seen_paths:
+                              seen_paths.add(path)
+                              candidates.append(path)
+                      if len(data.get("items", [])) < 100:
+                          break
+
+              selected = 0
+              entries = []
+              for path in candidates:
+                  if selected >= 100:
+                      break
+                  # Avoid category cross-contamination using filename/path.
+                  low = path.lower()
+                  if any(x in low for x in forbidden_common):
+                      continue
+                  if any(x in low for x in cross_exclude[current]):
+                      continue
+                  data = fetch_raw(path)
+                  if not data:
+                      continue
+                  try:
+                      text = data.decode("utf-8", "ignore")
+                  except Exception:
+                      continue
+                  if not good_candidate(path, text):
+                      continue
+                  digest = hashlib.sha256(data).hexdigest()
+                  if digest in global_hashes:
+                      continue
+                  global_hashes.add(digest)
+                  base = f"{selected+1:03d}_{Path(path).stem}"
+                  # Keep source SVG and create a high-resolution transparent PNG.
+                  svg_path = out / (base + ".svg")
+                  png_path = out / (base + ".png")
+                  svg_path.write_bytes(data)
+                  try:
+                      cairosvg.svg2png(bytestring=data, write_to=str(png_path), output_width=1600, output_height=1600)
+                  except Exception:
+                      svg_path.unlink(missing_ok=True)
+                      continue
+                  entries.append({
+                      "file": base,
+                      "source_path": path,
+                      "source_url": "https://github.com/ikks/openclipartcollection/blob/main/" + urllib.parse.quote(path, safe="/"),
+                      "license": "OpenClipart public domain / CC0"
+                  })
+                  selected += 1
+
+              if selected != 100:
+                  raise SystemExit(f"{current}: only {selected}/100 usable unique SVGs found")
+              manifest["categories"][current] = entries
+
+          (ROOT / "MANIFEST.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+          (ROOT / "LICENSE-AND-SOURCE.txt").write_text(
+              "SOURCE: OpenClipart collection mirrored on GitHub at https://github.com/ikks/openclipartcollection\n"
+              "LICENSE: OpenClipart states its clipart is released to the public domain using CC0 and permits commercial use.\n"
+              "This pack is a curated collection of sourced assets; AGT Studio did not create the underlying artwork.\n"
+              "Verify current Etsy rules and the individual source record before commercial listing.\n",
+              encoding="utf-8"
+          )
+          print("BUILT 1000 ASSETS")
+          PY
+
+          python3 build/make_pack.py
+
+          cd build
+          zip -qr AGTStudioCO-Halloween-1000-CC0-Sourced.zip halloween_1000
+          cd ..
+          sha256sum build/AGTStudioCO-Halloween-1000-CC0-Sourced.zip > build/SHA256.txt
+
+      - name: Upload finished ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: AGTStudioCO-Halloween-1000-CC0-Sourced
+          path: |
+            build/AGTStudioCO-Halloween-1000-CC0-Sourced.zip
+            build/SHA256.txt
+          retention-days: 14

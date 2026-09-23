@@ -22,8 +22,7 @@ jobs:
           cat > build/make_pack.py <<'PY'
           import re, json, hashlib, subprocess, urllib.parse
           from pathlib import Path
-          import cairosvg
-
+          
           ROOT = Path("build/halloween_1000")
           ROOT.mkdir(parents=True, exist_ok=True)
           RAW = "https://raw.githubusercontent.com/ikks/openclipartcollection/main/"

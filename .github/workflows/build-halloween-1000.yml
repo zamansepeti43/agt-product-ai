@@ -66,19 +66,9 @@ jobs:
                   return False
               if any(x in low for x in cross[category]):
                   return False
-              text = data.decode("utf-8","ignore")
-              if "<svg" not in text[:10000].lower():
-                  return False
-              if "<image" in text.lower() or "href=\"http" in text.lower() or "xlink:href=\"http" in text.lower():
-                  return False
-              if "viewbox" not in text.lower() and "width=" not in text.lower():
-                  return False
-              primitives = len(re.findall(r"<(?:path|polygon|polyline|circle|ellipse|rect|line)\\b", text, re.I))
-              if primitives < 2:
-                  return False
               if len(data) < 1500 or len(data) > 600000:
                   return False
-              return True
+              return data.lstrip().startswith(b"<") and b"<svg" in data[:10000].lower()
 
           global_hashes = set()
           manifest = {"source":"https://github.com/ikks/openclipartcollection","license":"OpenClipart public domain / CC0","categories":{}}

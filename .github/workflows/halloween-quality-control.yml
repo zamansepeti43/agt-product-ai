@@ -1,0 +1,54 @@
+name: Halloween Full Quality Control
+
+on:
+  push:
+    branches:
+      - asset-build-halloween-1000
+  workflow_dispatch:
+
+jobs:
+  qc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      actions: read
+    steps:
+      - name: Download source artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: AGTStudioCO-Halloween-1000-CC0-Sourced
+          github-token: ${{ github.token }}
+          repository: zamansepeti43/agt-product-ai
+          run-id: 35837477541
+          path: source_artifact
+
+      - name: Install rendering and ML dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin
+          unzip -q source_artifact/*.zip -d work/source
+          python -m pip install --upgrade pip
+          python -m pip install "torch==2.6.0" "transformers==4.57.1" "pillow" "imagehash"
+
+      - name: Run visual quality control
+        run: |
+          python tools/halloween_qc.py
+
+      - name: Package clean edition
+        run: |
+          set -euo pipefail
+          cd work
+          zip -qr AGTStudioCO-Halloween-QC-CLEAN.zip clean_halloween
+          zip -qr AGTStudioCO-Halloween-QC-REJECTED-REPORT.zip rejected_halloween
+          sha256sum AGTStudioCO-Halloween-QC-CLEAN.zip AGTStudioCO-Halloween-QC-REJECTED-REPORT.zip > SHA256.txt
+
+      - name: Upload cleaned package and report
+        uses: actions/upload-artifact@v4
+        with:
+          name: AGTStudioCO-Halloween-QC-CLEAN
+          path: |
+            work/AGTStudioCO-Halloween-QC-CLEAN.zip
+            work/AGTStudioCO-Halloween-QC-REJECTED-REPORT.zip
+            work/SHA256.txt
+          retention-days: 14

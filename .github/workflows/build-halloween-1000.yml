@@ -37,7 +37,7 @@ jobs:
           categories = {
               "01_Pumpkins": ["pumpkin", "jack-o-lantern", "jack_o_lantern", "jackolantern"],
               "02_Bats_Night_Flyers": ["bat", "bats", "raven", "crow", "owl"],
-              "03_Ghosts_Spirits": ["ghost", "ghosts", "phantom", "specter", "spectre", "spirit", "wraith", "ghoul", "haunt", "poltergeist", "apparition", "undead", "spectral", "ectoplasm", "haunting", "ghostly", "phantasm", "revenant", "boo"],
+              "03_Ghosts_Spirits_Undead": ["ghost", "ghosts", "phantom", "specter", "spectre", "spirit", "wraith", "ghoul", "haunt", "poltergeist", "apparition", "undead", "spectral", "ectoplasm", "haunting", "ghostly", "phantasm", "revenant", "boo", "zombie", "vampire"],
               "04_Witches_Brooms": ["witch", "witches", "broom", "broomstick", "cauldron"],
               "05_Spiders_Webs": ["spider", "spiders", "spiderweb", "cobweb", "web"],
               "06_Skulls_Skeletons": ["skull", "skulls", "skeleton", "bones", "bone"],

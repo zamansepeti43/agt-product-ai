@@ -44,7 +44,7 @@ jobs:
               "06_Skulls_Skeletons": ["skull", "skulls", "skeleton", "bones", "bone"],
               "07_Cats_Felines": ["cat", "cats", "kitten", "feline"],
               "08_Graveyard_Tombstones": ["graveyard", "grave", "gravestone", "tombstone", "cemetery", "churchyard", "crypt", "tomb", "coffin", "church", "chapel", "mausoleum", "catacomb", "cemetery-gate", "cemetery_gate", "gargoyle", "dead-tree", "dead_tree", "funeral", "skeleton", "zombie", "vampire", "werewolf", "undead"],
-              "09_Haunted_Gothic_Buildings": ["haunted-house", "haunted_house", "haunted", "spooky-house", "spooky_house", "mansion", "manor", "castle", "gothic-building"],
+              "09_Haunted_Gothic_Buildings": ["haunted-house", "haunted_house", "haunted", "spooky-house", "spooky_house", "mansion", "manor", "castle", "gothic-building", "house", "cottage", "villa", "tower", "church", "cathedral", "palace", "fortress", "keep", "building", "architecture"],
               "10_Halloween_Gothic_Decor": ["halloween", "gothic", "spooky", "horror", "trick-or-treat", "cauldron", "candy", "pumpkin-carving"]
           }
 

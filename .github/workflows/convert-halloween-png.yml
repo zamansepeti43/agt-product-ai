@@ -18,7 +18,7 @@ jobs:
           name: AGTStudioCO-Halloween-1000-CC0-Sourced
           github-token: ${{ github.token }}
           repository: zamansepeti43/agt-product-ai
-          run-id: 35833492371
+          run-id: 35837477541
           path: source_artifact
       - name: Convert SVG to transparent PNG
         run: |

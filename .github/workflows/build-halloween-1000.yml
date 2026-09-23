@@ -89,7 +89,7 @@ jobs:
                   return False
               if "<svg" not in text[:5000].lower():
                   return False
-              if "<image" in text.lower() or "xlink:href="http" in text.lower() or "href="http" in text.lower():
+              if "<image" in text.lower() or 'xlink:href="http' in text.lower() or 'href="http' in text.lower():
                   return False
               if "viewbox" not in text.lower() and not re.search(r'\bwidth=', text, re.I):
                   return False

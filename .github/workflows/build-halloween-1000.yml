@@ -72,7 +72,7 @@ jobs:
               low = path.lower()
               if any(x in low for x in forbidden):
                   return False
-              if any(x in low for x in cross[category]):
+              if any(x in low for x in cross.get(category, [])):
                   return False
               if len(data) < 700 or len(data) > 800000:
                   return False

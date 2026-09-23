@@ -96,12 +96,15 @@ jobs:
                       candidates.append(path)
               # Stable ordering: shorter/specific names first, then lexical.
               candidates = sorted(set(candidates), key=lambda p:(len(p),p.lower()))
+              print(f"{category}: candidates={len(candidates)} first={candidates[:5]}")
               selected = 0
               entries = []
               for path in candidates:
                   if selected >= 100:
                       break
                   data = raw(path)
+                  if selected == 0 and path == candidates[0] if candidates else False:
+                      print(f"{category}: first raw bytes={len(data)} path={path}")
                   if not data or not usable(path,data,category):
                       continue
                   digest = hashlib.sha256(data).hexdigest()

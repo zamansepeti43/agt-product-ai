@@ -1,6 +1,9 @@
 name: Convert Halloween SVG Pack to PNG
 
 on:
+  push:
+    branches:
+      - asset-build-halloween-1000
   workflow_dispatch:
 
 jobs:

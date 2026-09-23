@@ -26,7 +26,7 @@ jobs:
           git -C build/openclipart4 ls-tree -r --name-only HEAD > build/all_paths4.txt
 
           cat > build/make_pack.py <<'PY'
-          import re, json, hashlib, subprocess, urllib.parse
+          import re, json, hashlib, subprocess, urllib.parse, xml.etree.ElementTree as ET
           from concurrent.futures import ThreadPoolExecutor
           from pathlib import Path
           
@@ -79,7 +79,7 @@ jobs:
               max_size = 2000000 if category == "08_Graveyard_Tombstones" else 800000
               if len(data) < min_size or len(data) > max_size:
                   return False
-              return data.lstrip().startswith(b"<") and b"<svg" in data[:10000].lower() and subprocess.run(["xmllint","--noout","-"],input=data,capture_output=True).returncode == 0
+              try:\n                  ET.fromstring(data)\n                  return data.lstrip().startswith(b"<") and b"<svg" in data[:10000].lower()\n              except Exception:\n                  return False
 
           global_hashes = set()
           manifest = {"source":"https://github.com/ikks/openclipartcollection","license":"OpenClipart public domain / CC0","categories":{}}

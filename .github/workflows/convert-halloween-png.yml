@@ -1,0 +1,47 @@
+name: Convert Halloween SVG Pack to PNG
+
+on:
+  workflow_dispatch:
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Download source artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: AGTStudioCO-Halloween-1000-CC0-Sourced
+          github-token: ${{ github.token }}
+          repository: zamansepeti43/agt-product-ai
+          run-id: 35833492371
+          path: source_artifact
+      - name: Convert SVG to transparent PNG
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin
+          mkdir -p work/out
+          unzip -q source_artifact/*.zip -d work/source
+          find work/source -type f -name '*.svg' | while read -r f; do
+            rel="${f#work/source/}"
+            out="work/out/${rel%.svg}.png"
+            mkdir -p "$(dirname "$out")"
+            rsvg-convert -w 2000 -h 2000 -o "$out" "$f"
+          done
+          cp work/source/halloween_1000/MANIFEST.json work/out/MANIFEST.json
+          cp work/source/halloween_1000/LICENSE-AND-SOURCE.txt work/out/LICENSE-AND-SOURCE.txt
+          printf '%s\n' 'AGT Studio Halloween 1000 - PNG Edition' > work/out/README.txt
+          printf '%s\n' '1000 transparent PNG files, 2000x2000 px.' >> work/out/README.txt
+          cd work
+          zip -qr AGTStudioCO-Halloween-1000-TRANSPARENT-PNG.zip out
+          sha256sum AGTStudioCO-Halloween-1000-TRANSPARENT-PNG.zip > SHA256.txt
+      - name: Upload PNG ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: AGTStudioCO-Halloween-1000-TRANSPARENT-PNG
+          path: |
+            work/AGTStudioCO-Halloween-1000-TRANSPARENT-PNG.zip
+            work/SHA256.txt
+          retention-days: 14

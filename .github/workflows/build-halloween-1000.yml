@@ -74,7 +74,7 @@ jobs:
                   return False
               if any(x in low for x in cross[category]):
                   return False
-              if len(data) < 1500 or len(data) > 600000:
+              if len(data) < 700 or len(data) > 800000:
                   return False
               return data.lstrip().startswith(b"<") and b"<svg" in data[:10000].lower()
 

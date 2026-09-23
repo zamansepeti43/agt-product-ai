@@ -27,6 +27,7 @@ jobs:
 
           cat > build/make_pack.py <<'PY'
           import re, json, hashlib, subprocess, urllib.parse
+          from concurrent.futures import ThreadPoolExecutor
           from pathlib import Path
           
           ROOT = Path("build/halloween_1000")
@@ -95,12 +96,11 @@ jobs:
               print(f"{category}: candidates={len(candidates)} first={candidates[:5]}")
               selected = 0
               entries = []
-              for path in candidates:
+              with ThreadPoolExecutor(max_workers=24) as ex:
+                  downloaded = list(ex.map(raw, candidates[:400]))
+              for path, data in zip(candidates[:400], downloaded):
                   if selected >= 100:
                       break
-                  data = raw(path)
-                  if selected == 0 and path == candidates[0] if candidates else False:
-                      print(f"{category}: first raw bytes={len(data)} path={path}")
                   if not data or not usable(path,data,category):
                       continue
                   digest = hashlib.sha256(data).hexdigest()

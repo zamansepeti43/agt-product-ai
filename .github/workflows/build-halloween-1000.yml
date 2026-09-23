@@ -75,7 +75,8 @@ jobs:
                   return False
               if any(x in low for x in cross.get(category, [])):
                   return False
-              if len(data) < 700 or len(data) > 800000:
+              min_size = 250 if category == "08_Graveyard_Tombstones" else 700
+              if len(data) < min_size or len(data) > 800000:
                   return False
               return data.lstrip().startswith(b"<") and b"<svg" in data[:10000].lower()
 

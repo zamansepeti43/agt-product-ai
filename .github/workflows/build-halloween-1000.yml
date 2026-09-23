@@ -37,7 +37,7 @@ jobs:
           categories = {
               "01_Pumpkins": ["pumpkin", "jack-o-lantern", "jack_o_lantern", "jackolantern"],
               "02_Bats": ["bat", "bats"],
-              "03_Ghosts": ["ghost", "ghosts", "phantom"],
+              "03_Ghosts": ["ghost", "ghosts", "phantom", "specter", "spectre", "spirit", "wraith"],
               "04_Witches": ["witch", "witches", "broomstick", "broom"],
               "05_Spiders": ["spider", "spiders", "spiderweb", "cobweb"],
               "06_Skulls": ["skull", "skulls", "skeleton"],
@@ -87,7 +87,8 @@ jobs:
               candidates = []
               for path in paths:
                   low = path.split("::",1)[-1].lower()
-                  if any(term in low for term in terms):
+                  norm = re.sub(r"[^a-z0-9]+", " ", low).strip()
+                  if any(re.search(r"(?<![a-z0-9])" + re.escape(term.lower()).replace(r"\\ ", r"[ _-]+") + r"(?![a-z0-9])", norm) for term in terms):
                       candidates.append(path)
               # Stable ordering: shorter/specific names first, then lexical.
               candidates = sorted(set(candidates), key=lambda p:(len(p),p.lower()))

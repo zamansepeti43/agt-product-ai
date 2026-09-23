@@ -58,7 +58,7 @@ jobs:
               "06_Skulls_Skeletons":["pumpkin","bat","ghost","witch","spider","cat","grave","tombstone","house"],
               "07_Cats_Felines":["pumpkin","bat","ghost","witch","spider","skull","skeleton","grave","tombstone","house"],
               "08_Graveyard_Tombstones":["pumpkin","bat","witch"],
-              "09_Haunted_Gothic_Buildings":["pumpkin","bat","ghost","witch","spider","skull","skeleton","cat","grave","tombstone"],
+              "09_Haunted_Gothic_Buildings":["pumpkin","bat","ghost","witch","spider","skull","skeleton","cat","grave","tombstone","sand-castle"],
               "10_Halloween_Gothic_Decor":["pumpkin","bat","ghost","witch","spider","skull","skeleton","cat","grave","tombstone","haunted-house","haunted_house"]
           }
 

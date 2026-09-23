@@ -79,7 +79,7 @@ jobs:
               max_size = 2000000 if category == "08_Graveyard_Tombstones" else 800000
               if len(data) < min_size or len(data) > max_size:
                   return False
-              return data.lstrip().startswith(b"<") and b"<svg" in data[:10000].lower()
+              return data.lstrip().startswith(b"<") and b"<svg" in data[:10000].lower() and subprocess.run(["xmllint","--noout","-"],input=data,capture_output=True).returncode == 0
 
           global_hashes = set()
           manifest = {"source":"https://github.com/ikks/openclipartcollection","license":"OpenClipart public domain / CC0","categories":{}}

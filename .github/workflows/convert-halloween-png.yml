@@ -27,12 +27,14 @@ jobs:
           sudo apt-get install -y -qq librsvg2-bin
           mkdir -p work/out
           unzip -q source_artifact/*.zip -d work/source
-          find work/source -type f -name '*.svg' | while read -r f; do
+          export OUT_ROOT="$PWD/work/out"
+          find work/source -type f -name '*.svg' -print0 | xargs -0 -n 1 -P 8 bash -c '
+            f="$1"
             rel="${f#work/source/}"
-            out="work/out/${rel%.svg}.png"
+            out="$OUT_ROOT/${rel%.svg}.png"
             mkdir -p "$(dirname "$out")"
             rsvg-convert -w 2000 -h 2000 -o "$out" "$f"
-          done
+          ' _
           cp work/source/halloween_1000/MANIFEST.json work/out/MANIFEST.json
           cp work/source/halloween_1000/LICENSE-AND-SOURCE.txt work/out/LICENSE-AND-SOURCE.txt
           printf '%s\n' 'AGT Studio Halloween 1000 - PNG Edition' > work/out/README.txt

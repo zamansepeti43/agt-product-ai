@@ -20,6 +20,10 @@ jobs:
           git -C build/openclipart ls-tree -r --name-only HEAD > build/all_paths.txt
           git clone --filter=blob:none --no-checkout --depth=1 https://github.com/cyanidecupcake/openclipart-svg.git build/openclipart2
           git -C build/openclipart2 ls-tree -r --name-only HEAD > build/all_paths2.txt
+          git clone --filter=blob:none --no-checkout --depth=1 https://github.com/millette/oca.git build/openclipart3
+          git -C build/openclipart3 ls-tree -r --name-only HEAD > build/all_paths3.txt
+          git clone --filter=blob:none --no-checkout --depth=1 https://github.com/rg1024/openclipart-public.git build/openclipart4
+          git -C build/openclipart4 ls-tree -r --name-only HEAD > build/all_paths4.txt
 
           cat > build/make_pack.py <<'PY'
           import re, json, hashlib, subprocess, urllib.parse
@@ -28,7 +32,7 @@ jobs:
           ROOT = Path("build/halloween_1000")
           ROOT.mkdir(parents=True, exist_ok=True)
           RAW = "https://raw.githubusercontent.com/ikks/openclipartcollection/main/"
-          paths = ["A::"+x.strip() for x in Path("build/all_paths.txt").read_text(errors="ignore").splitlines() if x.strip().lower().endswith(".svg")] + ["B::"+x.strip() for x in Path("build/all_paths2.txt").read_text(errors="ignore").splitlines() if x.strip().lower().endswith(".svg")]
+          paths = ["A::"+x.strip() for x in Path("build/all_paths.txt").read_text(errors="ignore").splitlines() if x.strip().lower().endswith(".svg")] + ["B::"+x.strip() for x in Path("build/all_paths2.txt").read_text(errors="ignore").splitlines() if x.strip().lower().endswith(".svg")] + ["C::"+x.strip() for x in Path("build/all_paths3.txt").read_text(errors="ignore").splitlines() if x.strip().lower().endswith(".svg")] + ["D::"+x.strip() for x in Path("build/all_paths4.txt").read_text(errors="ignore").splitlines() if x.strip().lower().endswith(".svg")]
 
           categories = {
               "01_Pumpkins": ["pumpkin", "jack-o-lantern", "jack_o_lantern", "jackolantern"],
@@ -59,7 +63,7 @@ jobs:
 
           def raw(item):
               source, path = item.split("::",1)
-              base = RAW if source == "A" else "https://raw.githubusercontent.com/cyanidecupcake/openclipart-svg/master/"
+              base = {"A":RAW,"B":"https://raw.githubusercontent.com/cyanidecupcake/openclipart-svg/master/","C":"https://raw.githubusercontent.com/millette/oca/master/","D":"https://raw.githubusercontent.com/rg1024/openclipart-public/master/"}[source]
               url = base + urllib.parse.quote(path, safe="/")
               p = subprocess.run(["curl","-fsSL","--retry","2",url], capture_output=True)
               return p.stdout if p.returncode == 0 else b""
@@ -105,7 +109,7 @@ jobs:
                   stem = re.sub(r"[^A-Za-z0-9_-]+","_",Path(path).stem)[:80]
                   base = f"{selected+1:03d}_{stem}"
                   (out/(base+".svg")).write_bytes(data)
-                  entries.append({"file":base,"source_path":path.split("::",1)[-1],"source_url":("https://github.com/ikks/openclipartcollection/blob/main/" if path.startswith("A::") else "https://github.com/cyanidecupcake/openclipart-svg/blob/master/")+urllib.parse.quote(path.split("::",1)[-1],safe="/"),"license":"OpenClipart public domain / CC0"})
+                  entries.append({"file":base,"source_path":path.split("::",1)[-1],"source_url":({"A":"https://github.com/ikks/openclipartcollection/blob/main/","B":"https://github.com/cyanidecupcake/openclipart-svg/blob/master/","C":"https://github.com/millette/oca/blob/master/","D":"https://github.com/rg1024/openclipart-public/blob/master/"}[path.split("::",1)[0]])+urllib.parse.quote(path.split("::",1)[-1],safe="/"),"license":"OpenClipart public domain / CC0"})
                   selected += 1
               if selected != 100:
                   raise SystemExit(f"{category}: only {selected}/100 usable unique SVGs found")
